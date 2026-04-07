@@ -12,6 +12,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <javafx.version>21.0.2</javafx.version>
         <atlantafx.version>2.0.1</atlantafx.version>
+        <controlsfx.version>11.2.1</controlsfx.version>
     </properties>
 
     <dependencies>
@@ -24,6 +25,11 @@
             <groupId>io.github.mkpaz</groupId>
             <artifactId>atlantafx-base</artifactId>
             <version>${atlantafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>${controlsfx.version}</version>
         </dependency>
     </dependencies>
 

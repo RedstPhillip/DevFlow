@@ -2,7 +2,9 @@ package com.devflow;
 
 import atlantafx.base.theme.PrimerDark;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -15,6 +17,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.Notifications;
+import org.controlsfx.control.PopOver;
+import org.controlsfx.control.StatusBar;
+import org.controlsfx.control.ToggleSwitch;
 
 public class MainApp extends Application {
 
@@ -50,6 +57,7 @@ public class MainApp extends Application {
         );
 
         VBox componentDemo = createComponentDemo();
+        VBox controlsFxDemo = createControlsFxDemo(stage);
         VBox contextDemo = createContextDemo();
 
         content.getChildren().addAll(
@@ -58,6 +66,7 @@ public class MainApp extends Application {
             new Separator(),
             section("Farbrollen", "Alle definierten Theme-Werte als Tokens", tokens),
             section("Komponenten", "Buttons, Inputs und Zustandsfarben", componentDemo),
+            section("ControlsFX", "Interaktive ControlsFX-Komponenten im Einsatz", controlsFxDemo),
             section("Kontextflaechen", "Card- und Popover-Oberflaechen in Kombination", contextDemo)
         );
 
@@ -102,6 +111,65 @@ public class MainApp extends Application {
             input,
             actions,
             badges
+        );
+        card.getStyleClass().add("card");
+        card.setPadding(new Insets(16));
+        return card;
+    }
+
+    private VBox createControlsFxDemo(Stage stage) {
+        CheckComboBox<String> checkComboBox = new CheckComboBox<>(
+            FXCollections.observableArrayList("Backlog", "In Progress", "Review", "Done")
+        );
+        checkComboBox.setMaxWidth(320);
+        checkComboBox.getCheckModel().checkIndices(1);
+
+        ToggleSwitch liveUpdates = new ToggleSwitch();
+        liveUpdates.setText("Live Updates aktiv");
+        liveUpdates.setSelected(true);
+
+        StatusBar statusBar = new StatusBar();
+        statusBar.setText("Status: 1 Filter aktiv");
+        statusBar.setProgress(0.55);
+
+        VBox popOverContent = new VBox(8,
+            new Label("PopOver Inhalt"),
+            new Label("Overlay-Demo fuer Details und kontextuelle Aktionen.")
+        );
+        popOverContent.setPadding(new Insets(10));
+
+        PopOver popOver = new PopOver(popOverContent);
+        popOver.setTitle("ControlsFX PopOver");
+        popOver.setDetachable(false);
+
+        Button popOverButton = new Button("Open PopOver");
+        popOverButton.getStyleClass().add("button-secondary");
+        popOverButton.setOnAction(event -> {
+            if (popOver.isShowing()) {
+                popOver.hide();
+            } else {
+                popOver.show(popOverButton);
+            }
+        });
+
+        Button notifyButton = new Button("Show Notification");
+        notifyButton.getStyleClass().add("button-primary");
+        notifyButton.setOnAction(event -> Notifications.create()
+            .title("ControlsFX Notification")
+            .text("Filter wurden aktualisiert.")
+            .owner(stage)
+            .position(Pos.BOTTOM_RIGHT)
+            .showInformation()
+        );
+
+        HBox actions = new HBox(10, notifyButton, popOverButton, liveUpdates);
+        actions.setAlignment(Pos.CENTER_LEFT);
+
+        VBox card = new VBox(14,
+            new Label("ControlsFX Komponenten"),
+            checkComboBox,
+            actions,
+            statusBar
         );
         card.getStyleClass().add("card");
         card.setPadding(new Insets(16));
