@@ -11,35 +11,45 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public class UserListView extends VBox {
+public class UserListView extends StackPane {
 
     private final ListView<User> listView;
     private final ObservableList<User> users;
+    private final Label emptyLabel;
     private Consumer<User> onStartDm;
+    private long currentUserId;
 
     public UserListView() {
         getStyleClass().add("user-list-panel");
         users = FXCollections.observableArrayList();
 
-        Label header = new Label("Benutzer");
-        header.getStyleClass().add("panel-header");
-        header.setPadding(new Insets(12, 16, 12, 16));
-
         listView = new ListView<>(users);
-        listView.getStyleClass().add("user-list");
+        listView.getStyleClass().add("list-view-clean");
         listView.setCellFactory(lv -> new UserListCell());
-        VBox.setVgrow(listView, Priority.ALWAYS);
 
-        getChildren().addAll(header, listView);
+        emptyLabel = new Label("Keine Benutzer gefunden");
+        emptyLabel.getStyleClass().add("empty-state-text");
+        StackPane emptyState = new StackPane(emptyLabel);
+        emptyState.getStyleClass().add("empty-state");
+        emptyState.setPadding(new Insets(40));
+        emptyState.visibleProperty().bind(javafx.beans.binding.Bindings.isEmpty(users));
+        emptyState.managedProperty().bind(emptyState.visibleProperty());
+
+        getChildren().addAll(listView, emptyState);
     }
 
     public void setUsers(List<User> userList) {
-        users.setAll(userList);
+        users.setAll(userList.stream().filter(u -> u.getId() != currentUserId).toList());
+    }
+
+    public void setCurrentUserId(long id) {
+        this.currentUserId = id;
     }
 
     public void setOnStartDm(Consumer<User> handler) {
@@ -56,23 +66,26 @@ public class UserListView extends VBox {
                 return;
             }
 
+            Avatar avatar = new Avatar(user.getUsername(), 36);
+
             Label nameLabel = new Label(user.getUsername());
             nameLabel.getStyleClass().add("user-cell-name");
-            HBox.setHgrow(nameLabel, Priority.ALWAYS);
-            nameLabel.setMaxWidth(Double.MAX_VALUE);
+
+            VBox textBox = new VBox(nameLabel);
+            textBox.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(textBox, Priority.ALWAYS);
 
             Button dmButton = new Button("Nachricht");
-            dmButton.getStyleClass().add("button-primary");
-            dmButton.setStyle("-fx-font-size: 11px; -fx-padding: 4 10;");
+            dmButton.getStyleClass().add("user-cell-btn");
             dmButton.setOnAction(e -> {
                 if (onStartDm != null) {
                     onStartDm.accept(user);
                 }
             });
 
-            HBox cell = new HBox(10, nameLabel, dmButton);
+            HBox cell = new HBox(12, avatar, textBox, dmButton);
             cell.setAlignment(Pos.CENTER_LEFT);
-            cell.setPadding(new Insets(8, 16, 8, 16));
+            cell.setPadding(new Insets(10, 14, 10, 14));
 
             setGraphic(cell);
             setText(null);

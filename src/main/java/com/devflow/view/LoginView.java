@@ -21,17 +21,17 @@ public class LoginView extends StackPane {
     public LoginView() {
         getStyleClass().add("login-root");
 
-        VBox card = new VBox(16);
+        VBox card = new VBox(20);
         card.getStyleClass().add("login-card");
-        card.setPadding(new Insets(32));
         card.setMaxWidth(400);
-        card.setAlignment(Pos.CENTER);
+        card.setAlignment(Pos.TOP_LEFT);
 
-        Label title = new Label("DevFlow");
+        Label title = new Label("Willkommen bei DevFlow");
         title.getStyleClass().add("login-title");
 
-        Label subtitle = new Label("Melde dich an oder erstelle einen Account");
-        subtitle.getStyleClass().add("muted");
+        Label subtitle = new Label("Melde dich an oder erstelle einen neuen Account, um mit deinem Team zu chatten.");
+        subtitle.getStyleClass().add("login-subtitle");
+        subtitle.setWrapText(true);
 
         usernameField = new TextField();
         usernameField.setPromptText("Benutzername");
@@ -41,13 +41,17 @@ public class LoginView extends StackPane {
         passwordField.setPromptText("Passwort");
         passwordField.getStyleClass().add("login-field");
 
+        VBox fields = new VBox(10, usernameField, passwordField);
+
         loginButton = new Button("Anmelden");
         loginButton.getStyleClass().addAll("button-primary", "login-button");
         loginButton.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(loginButton, javafx.scene.layout.Priority.ALWAYS);
 
         registerButton = new Button("Registrieren");
         registerButton.getStyleClass().addAll("button-secondary", "login-button");
         registerButton.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(registerButton, javafx.scene.layout.Priority.ALWAYS);
 
         HBox buttons = new HBox(10, loginButton, registerButton);
         buttons.setAlignment(Pos.CENTER);
@@ -58,9 +62,14 @@ public class LoginView extends StackPane {
         errorLabel.setManaged(false);
         errorLabel.setWrapText(true);
 
-        card.getChildren().addAll(title, subtitle, usernameField, passwordField, errorLabel, buttons);
+        Label footer = new Label("Bei Problemen wende dich an dein IT-Team.");
+        footer.getStyleClass().add("login-footer");
+
+        card.getChildren().addAll(title, subtitle, fields, errorLabel, buttons, footer);
+        card.setPadding(new Insets(32));
 
         setAlignment(Pos.CENTER);
+        setPadding(new Insets(24));
         getChildren().add(card);
     }
 

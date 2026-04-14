@@ -1,5 +1,6 @@
 package com.devflow.controller;
 
+import com.devflow.config.ThemeManager;
 import com.devflow.config.TokenStore;
 import com.devflow.model.Chat;
 import com.devflow.model.User;
@@ -7,13 +8,15 @@ import com.devflow.service.AuthService;
 import com.devflow.service.ChatService;
 import com.devflow.service.MessageService;
 import com.devflow.service.UserService;
-import com.devflow.view.ActivityBar;
 import com.devflow.view.ChatListView;
 import com.devflow.view.ChatView;
 import com.devflow.view.LoginView;
 import com.devflow.view.MainLayout;
+import com.devflow.view.SettingsView;
+import com.devflow.view.Sidebar;
 import com.devflow.view.UserListView;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -30,6 +33,9 @@ public class MainController {
     private ChatViewController chatViewController;
     private UserListController userListController;
     private LoginController loginController;
+
+    private ChatListView chatListView;
+    private UserListView userListView;
 
     private final AuthService authService;
     private final UserService userService;
@@ -57,54 +63,50 @@ public class MainController {
         LoginView loginView = new LoginView();
         loginController = new LoginController(loginView, authService, this);
 
-        scene = new Scene(loginView, 980, 700);
-        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
-        scene.getStylesheets().add(getClass().getResource("/styles/login.css").toExternalForm());
-        stage.setScene(scene);
-        stage.show();
+        setScene(loginView, "/styles/login.css");
     }
 
     public void showMainLayout() {
         stopAllPolling();
 
-        ActivityBar activityBar = new ActivityBar(this::onNavigate);
-        mainLayout = new MainLayout(activityBar);
+        Sidebar sidebar = new Sidebar();
+        sidebar.setCurrentUser(getCurrentUser());
+        mainLayout = new MainLayout(sidebar);
 
-        ChatListView chatListView = new ChatListView();
+        chatListView = new ChatListView();
         chatListController = new ChatListController(chatListView, chatService, this);
 
-        UserListView userListView = new UserListView();
+        userListView = new UserListView();
+        userListView.setCurrentUserId(getCurrentUser().getId());
         userListController = new UserListController(userListView, userService, this);
 
-        showWelcomeContent();
-        mainLayout.setSideContent(chatListView);
-        chatListController.startRefresh();
+        sidebar.setOnChatsTab(() -> {
+            mainLayout.setSidebarContent(chatListView);
+            chatListController.startRefresh();
+        });
+        sidebar.setOnUsersTab(() -> {
+            chatListController.stopRefresh();
+            mainLayout.setSidebarContent(userListView);
+            userListController.load();
+        });
+        sidebar.setOnNewChat(() -> sidebar.selectTab(Sidebar.Tab.USERS));
+        sidebar.setOnSettings(this::showSettings);
 
-        scene = new Scene(mainLayout, 980, 700);
-        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
-        scene.getStylesheets().add(getClass().getResource("/styles/chat.css").toExternalForm());
-        stage.setScene(scene);
-        stage.show();
+        // Trigger initial tab
+        sidebar.selectTab(Sidebar.Tab.CHATS);
+
+        showWelcomeContent();
+
+        setScene(mainLayout, "/styles/chat.css");
     }
 
-    private void onNavigate(String target) {
-        switch (target) {
-            case "chats" -> {
-                ChatListView chatListView = new ChatListView();
-                chatListController = new ChatListController(chatListView, chatService, this);
-                mainLayout.setSideContent(chatListView);
-                chatListController.startRefresh();
-            }
-            case "users" -> {
-                UserListView userListView = new UserListView();
-                userListController = new UserListController(userListView, userService, this);
-                mainLayout.setSideContent(userListView);
-                userListController.load();
-            }
-            case "settings" -> {
-                mainLayout.setSideContent(createSettingsPanel());
-            }
+    public void showSettings() {
+        if (chatViewController != null) {
+            chatViewController.stopPolling();
         }
+        SettingsView settings = new SettingsView();
+        settings.setOnLogout(this::logout);
+        mainLayout.setMainContent(settings);
     }
 
     public void openChat(Chat chat) {
@@ -121,33 +123,27 @@ public class MainController {
     public void startDmWith(User otherUser) {
         chatService.getOrCreateDmChat(otherUser.getId()).thenAcceptAsync(chat -> {
             openChat(chat);
-            mainLayout.getActivityBar().selectChats();
+            mainLayout.getSidebar().selectTab(Sidebar.Tab.CHATS);
         }, Platform::runLater);
     }
 
     private void showWelcomeContent() {
-        VBox welcome = new VBox(12);
+        VBox welcome = new VBox(10);
         welcome.getStyleClass().add("welcome-content");
+        welcome.setAlignment(Pos.CENTER);
 
-        Label title = new Label("DevFlow");
+        Label title = new Label("Willkommen bei DevFlow");
         title.getStyleClass().add("welcome-title");
 
-        Label subtitle = new Label("Waehle einen Chat oder starte eine neue Unterhaltung");
-        subtitle.getStyleClass().add("muted");
+        Label subtitle = new Label("Wähle einen Chat aus der Seitenleiste oder starte eine neue Unterhaltung.");
+        subtitle.getStyleClass().add("welcome-subtitle");
+        subtitle.setWrapText(true);
+        subtitle.setMaxWidth(460);
 
         welcome.getChildren().addAll(title, subtitle);
         StackPane wrapper = new StackPane(welcome);
         wrapper.getStyleClass().add("content-area");
         mainLayout.setMainContent(wrapper);
-    }
-
-    private VBox createSettingsPanel() {
-        VBox settings = new VBox(12);
-        settings.getStyleClass().add("settings-panel");
-        Label title = new Label("Einstellungen");
-        title.getStyleClass().add("section-title");
-        settings.getChildren().add(title);
-        return settings;
     }
 
     public void logout() {
@@ -159,7 +155,7 @@ public class MainController {
         if (TokenStore.getInstance().hasAuthToken() && TokenStore.getInstance().getAuthToken().getUser() != null) {
             return TokenStore.getInstance().getAuthToken().getUser();
         }
-        return new User(0, "Unknown", null);
+        return new User(0, "Gast", null);
     }
 
     private void stopAllPolling() {
@@ -168,7 +164,22 @@ public class MainController {
         }
         if (chatViewController != null) {
             chatViewController.stopPolling();
+            chatViewController = null;
         }
+    }
+
+    private void setScene(javafx.scene.Parent root, String extraStylesheet) {
+        if (scene != null) {
+            ThemeManager.getInstance().unregisterScene(scene);
+        }
+        scene = new Scene(root, 1100, 740);
+        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
+        if (extraStylesheet != null) {
+            scene.getStylesheets().add(getClass().getResource(extraStylesheet).toExternalForm());
+        }
+        ThemeManager.getInstance().registerScene(scene);
+        stage.setScene(scene);
+        stage.show();
     }
 
     public Stage getStage() { return stage; }

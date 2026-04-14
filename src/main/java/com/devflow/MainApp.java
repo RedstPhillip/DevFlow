@@ -1,7 +1,7 @@
 package com.devflow;
 
-import atlantafx.base.theme.PrimerDark;
 import com.devflow.config.AppConfig;
+import com.devflow.config.ThemeManager;
 import com.devflow.config.TokenStore;
 import com.devflow.controller.MainController;
 import com.devflow.service.UpdateService;
@@ -14,39 +14,34 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        ThemeManager.getInstance().applyInitial();
 
         stage.setTitle("DevFlow " + AppConfig.APP_VERSION);
-        stage.setMinWidth(800);
-        stage.setMinHeight(500);
+        stage.setMinWidth(900);
+        stage.setMinHeight(600);
 
         MainController mainController = new MainController(stage);
+        mainController.start();
 
-        checkForUpdates(stage, () -> mainController.start());
+        checkForUpdates(stage);
     }
 
-    private void checkForUpdates(Stage stage, Runnable onComplete) {
+    private void checkForUpdates(Stage stage) {
         String pat = TokenStore.getInstance().getGithubPat();
-
         if (pat == null || pat.isBlank()) {
-            onComplete.run();
             return;
         }
 
         UpdateService updateService = new UpdateService();
         updateService.checkForUpdate()
                 .thenAcceptAsync(updateInfo -> {
-                    onComplete.run();
                     if (updateInfo != null) {
                         UpdateDialog dialog = new UpdateDialog(stage, updateInfo, updateService);
                         dialog.showAndWait();
                     }
                 }, Platform::runLater)
                 .exceptionally(ex -> {
-                    Platform.runLater(() -> {
-                        System.err.println("Update check failed: " + ex.getMessage());
-                        onComplete.run();
-                    });
+                    System.err.println("Update check failed: " + ex.getMessage());
                     return null;
                 });
     }

@@ -1,277 +1,319 @@
+/* ══════════════════════════════════════════════════════════════
+   DevFlow Design System
+   Dark theme (default) + Light theme override
+   ══════════════════════════════════════════════════════════════ */
+
 .root {
     -df-background: #0a0a0a;
     -df-foreground: #fafafa;
-    -df-card: #171717;
+    -df-card: #141414;
     -df-card-foreground: #fafafa;
-    -df-popover: #262626;
+    -df-popover: #1c1c1c;
     -df-popover-foreground: #fafafa;
     -df-primary: #2b7fff;
-    -df-primary-foreground: #171717;
-    -df-secondary: #262626;
+    -df-primary-foreground: #ffffff;
+    -df-secondary: #1e1e1e;
     -df-secondary-foreground: #fafafa;
     -df-muted: #262626;
     -df-muted-foreground: #a1a1a1;
-    -df-accent: #404040;
+    -df-accent: #2a2a2a;
     -df-accent-foreground: #fafafa;
     -df-destructive: #ff6467;
     -df-destructive-foreground: #fafafa;
-    -df-border: #282828;
-    -df-input: #343434;
-    -df-ring: #737373;
+    -df-border: #232323;
+    -df-input: #1e1e1e;
+    -df-ring: #3b82f6;
+    -df-sidebar: #111111;
+    -df-sidebar-foreground: #fafafa;
+    -df-sidebar-border: #1e1e1e;
+    -df-success: #22c55e;
 }
 
-.app-root,
-.showcase-scroll,
-.showcase-scroll > .viewport {
-    -fx-background-color: -df-background;
+.light-theme {
+    -df-background: #ffffff;
+    -df-foreground: #0a0a0a;
+    -df-card: #ffffff;
+    -df-card-foreground: #0a0a0a;
+    -df-popover: #ffffff;
+    -df-popover-foreground: #0a0a0a;
+    -df-primary: #2b7fff;
+    -df-primary-foreground: #ffffff;
+    -df-secondary: #f5f5f5;
+    -df-secondary-foreground: #171717;
+    -df-muted: #f0f0f0;
+    -df-muted-foreground: #737373;
+    -df-accent: #f0f0f0;
+    -df-accent-foreground: #171717;
+    -df-destructive: #dc2626;
+    -df-destructive-foreground: #ffffff;
+    -df-border: #e5e5e5;
+    -df-input: #f5f5f5;
+    -df-ring: #2b7fff;
+    -df-sidebar: #fafafa;
+    -df-sidebar-foreground: #0a0a0a;
+    -df-sidebar-border: #e5e5e5;
+    -df-success: #16a34a;
 }
 
-.showcase-content {
-    -fx-spacing: 18;
-}
+/* ── Global ── */
 
 .label {
     -fx-text-fill: -df-foreground;
-}
-
-.title {
-    -fx-font-size: 28px;
-    -fx-font-weight: 800;
-    -fx-text-fill: -df-foreground;
-}
-
-.section {
-    -fx-background-color: transparent;
-}
-
-.section-title {
-    -fx-font-size: 18px;
-    -fx-font-weight: 700;
 }
 
 .muted {
     -fx-text-fill: -df-muted-foreground;
 }
 
-.card,
-.context-box {
-    -fx-background-color: -df-card;
-    -fx-background-radius: 12;
-    -fx-border-color: -df-border;
-    -fx-border-radius: 12;
-}
-
-.context-box {
-    -fx-padding: 14;
-    -fx-pref-width: 280;
-}
-
-.token-grid {
-    -fx-padding: 4 0 0 0;
-}
-
-.token {
-    -fx-background-radius: 10;
-    -fx-border-color: -df-border;
-    -fx-border-radius: 10;
-}
-
-.token-title {
-    -fx-font-size: 13px;
+.section-title {
+    -fx-font-size: 16px;
     -fx-font-weight: 700;
-}
-
-.token-hex {
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-    -fx-opacity: 0.88;
-}
-
-.badge {
-    -fx-padding: 4 10 4 10;
-    -fx-background-radius: 999;
-    -fx-font-size: 12px;
-    -fx-font-weight: 700;
-}
-
-.text-field {
-    -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
-    -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
-    -fx-border-color: transparent;
-}
-
-.text-field:focused {
-    -fx-border-color: -df-ring;
-}
-
-.button {
-    -fx-background-radius: 8;
-    -fx-text-fill: -df-accent-foreground;
-    -fx-border-radius: 8;
-}
-
-.button.button-primary {
-    -fx-background-color: -df-primary;
-    -fx-text-fill: -df-primary-foreground;
-}
-
-.button.button-secondary {
-    -fx-background-color: -df-secondary;
-    -fx-text-fill: -df-secondary-foreground;
-    -fx-border-color: -df-border;
-}
-
-.button.button-destructive {
-    -fx-background-color: -df-destructive;
-    -fx-text-fill: -df-destructive-foreground;
 }
 
 .tooltip {
     -fx-background-color: -df-popover;
     -fx-text-fill: -df-popover-foreground;
     -fx-border-color: -df-border;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 6 10;
+    -fx-font-size: 12px;
 }
 
-/* ControlsFX overrides: avoid Modena looked-up color casts under PrimerDark */
-.toggle-switch .thumb-area {
-    -fx-background-color: -df-secondary;
-    -fx-border-color: -df-border;
-    -fx-border-radius: 999;
-    -fx-background-radius: 999;
+.separator {
+    -fx-background-color: transparent;
 }
-
-.toggle-switch:selected .thumb-area {
-    -fx-background-color: -df-primary;
-}
-
-.toggle-switch .thumb {
-    -fx-background-color: -df-foreground;
-}
-
-.status-bar {
-    -fx-background-color: -df-card;
+.separator .line {
     -fx-border-color: -df-border;
     -fx-border-width: 1 0 0 0;
 }
 
-.status-bar .label {
-    -fx-text-fill: -df-foreground;
-}
-
-.status-bar .progress-bar > .track {
-    -fx-background-color: -df-input;
-}
-
-.status-bar .progress-bar > .bar {
-    -fx-background-color: -df-primary;
-}
-
-.surface-background { -fx-background-color: -df-background; }
-.surface-foreground { -fx-background-color: -df-foreground; }
-.surface-card { -fx-background-color: -df-card; }
-.surface-popover { -fx-background-color: -df-popover; }
-.surface-primary { -fx-background-color: -df-primary; }
-.surface-secondary { -fx-background-color: -df-secondary; }
-.surface-muted { -fx-background-color: -df-muted; }
-.surface-accent { -fx-background-color: -df-accent; }
-.surface-destructive { -fx-background-color: -df-destructive; }
-.surface-border { -fx-background-color: -df-border; }
-.surface-input { -fx-background-color: -df-input; }
-.surface-ring { -fx-background-color: -df-ring; }
-
-.text-background { -fx-text-fill: -df-background; }
-.text-foreground { -fx-text-fill: -df-foreground; }
-.text-card-foreground { -fx-text-fill: -df-card-foreground; }
-.text-popover-foreground { -fx-text-fill: -df-popover-foreground; }
-.text-primary-foreground { -fx-text-fill: -df-primary-foreground; }
-.text-secondary-foreground { -fx-text-fill: -df-secondary-foreground; }
-.text-muted-foreground { -fx-text-fill: -df-muted-foreground; }
-.text-accent-foreground { -fx-text-fill: -df-accent-foreground; }
-.text-destructive-foreground { -fx-text-fill: -df-destructive-foreground; }
-
-/* ── Layout ── */
-
-.main-layout {
-    -fx-background-color: -df-background;
-}
-
-.activity-bar {
-    -fx-background-color: #050505;
-    -fx-border-color: -df-border;
-    -fx-border-width: 0 1 0 0;
-}
-
-.activity-bar-button {
+.scroll-bar {
     -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 18px;
-    -fx-padding: 10;
+}
+.scroll-bar .thumb {
+    -fx-background-color: -df-muted;
+    -fx-background-radius: 4;
+}
+.scroll-bar .thumb:hover {
+    -fx-background-color: -df-muted-foreground;
+}
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+/* ── Buttons ── */
+
+.button {
     -fx-background-radius: 8;
     -fx-border-radius: 8;
     -fx-cursor: hand;
-    -fx-min-width: 40;
-    -fx-min-height: 40;
-    -fx-pref-width: 40;
-    -fx-pref-height: 40;
+    -fx-font-size: 13px;
+    -fx-padding: 8 16;
 }
 
-.activity-bar-button:hover {
+.button-primary {
+    -fx-background-color: -df-primary;
+    -fx-text-fill: -df-primary-foreground;
+    -fx-font-weight: 600;
+}
+.button-primary:hover {
+    -fx-opacity: 0.9;
+}
+
+.button-secondary {
     -fx-background-color: -df-secondary;
-    -fx-text-fill: -df-foreground;
-}
-
-.activity-bar-button-active {
-    -fx-text-fill: -df-foreground;
-    -fx-border-color: transparent transparent transparent -df-primary;
-    -fx-border-width: 0 0 0 2;
-}
-
-.side-panel {
-    -fx-background-color: -df-card;
+    -fx-text-fill: -df-secondary-foreground;
     -fx-border-color: -df-border;
-    -fx-border-width: 0 1 0 0;
+}
+.button-secondary:hover {
+    -fx-background-color: -df-accent;
+}
+
+.button-destructive {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-destructive;
+    -fx-border-color: -df-destructive;
+    -fx-font-weight: 600;
+}
+.button-destructive:hover {
+    -fx-background-color: -df-destructive;
+    -fx-text-fill: -df-destructive-foreground;
+}
+
+.button-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-border-color: transparent;
+    -fx-padding: 6 10;
+}
+.button-ghost:hover {
+    -fx-background-color: -df-accent;
+    -fx-text-fill: -df-foreground;
+}
+
+/* ── Text Fields ── */
+
+.text-field, .password-field {
+    -fx-background-color: -df-input;
+    -fx-text-fill: -df-foreground;
+    -fx-prompt-text-fill: -df-muted-foreground;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: -df-border;
+    -fx-border-width: 1;
+    -fx-padding: 10 12;
+    -fx-font-size: 13px;
+}
+.text-field:focused, .password-field:focused {
+    -fx-border-color: -df-ring;
+}
+
+/* ── Main Layout ── */
+
+.main-layout {
+    -fx-background-color: -df-background;
 }
 
 .content-area {
     -fx-background-color: -df-background;
 }
 
-.panel-header {
-    -fx-font-size: 14px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-    -fx-border-color: -df-border;
+/* ── Sidebar ── */
+
+.sidebar {
+    -fx-background-color: -df-sidebar;
+    -fx-border-color: -df-sidebar-border;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-header {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-sidebar-border;
     -fx-border-width: 0 0 1 0;
 }
 
-/* ── Chat List ── */
-
-.chat-list-panel {
-    -fx-background-color: -df-card;
+.sidebar-brand {
+    -fx-font-size: 16px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -df-foreground;
 }
 
-.chat-list {
-    -fx-background-color: -df-card;
+.sidebar-new-chat-btn {
+    -fx-background-color: -df-primary;
+    -fx-text-fill: -df-primary-foreground;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 4 10;
+    -fx-font-size: 18px;
+    -fx-font-weight: 300;
+    -fx-cursor: hand;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
+}
+.sidebar-new-chat-btn:hover {
+    -fx-opacity: 0.85;
 }
 
-.chat-list .list-cell {
+.sidebar-tab-bar {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-sidebar-border;
+    -fx-border-width: 0 0 1 0;
+}
+
+.sidebar-tab {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-padding: 8 0;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-cursor: hand;
+}
+.sidebar-tab:hover {
+    -fx-text-fill: -df-foreground;
+}
+.sidebar-tab-active {
+    -fx-text-fill: -df-foreground;
+    -fx-border-color: -df-primary;
+}
+
+.sidebar-user-bar {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-sidebar-border;
+    -fx-border-width: 1 0 0 0;
+}
+
+.sidebar-username {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -df-foreground;
+}
+
+.sidebar-status {
+    -fx-font-size: 11px;
+    -fx-text-fill: -df-success;
+}
+
+.sidebar-settings-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 6;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+}
+.sidebar-settings-btn:hover {
+    -fx-background-color: -df-accent;
+    -fx-text-fill: -df-foreground;
+}
+
+/* ── List Views (Chat + User) ── */
+
+.list-view-clean {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0;
+}
+
+.list-view-clean .list-cell {
     -fx-background-color: transparent;
     -fx-padding: 0;
+    -fx-border-color: transparent;
 }
-
-.chat-list .list-cell:selected {
-    -fx-background-color: -df-secondary;
-}
-
-.chat-list .list-cell:hover {
+.list-view-clean .list-cell:filled:hover {
     -fx-background-color: -df-accent;
+}
+.list-view-clean .list-cell:filled:selected {
+    -fx-background-color: -df-accent;
+}
+.list-view-clean .list-cell:empty {
+    -fx-background-color: transparent;
+}
+.list-view-clean .list-cell:empty:hover {
+    -fx-background-color: transparent;
+}
+.list-view-clean .list-cell:empty:selected {
+    -fx-background-color: transparent;
 }
 
 .chat-cell-name {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: 600;
     -fx-text-fill: -df-foreground;
 }
@@ -286,51 +328,114 @@
     -fx-text-fill: -df-muted-foreground;
 }
 
-/* ── User List ── */
-
-.user-list-panel {
-    -fx-background-color: -df-card;
-}
-
-.user-list {
-    -fx-background-color: -df-card;
-}
-
-.user-list .list-cell {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.user-list .list-cell:selected {
-    -fx-background-color: -df-secondary;
-}
-
-.user-list .list-cell:hover {
-    -fx-background-color: -df-accent;
-}
-
 .user-cell-name {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: 500;
     -fx-text-fill: -df-foreground;
 }
 
-/* ── Welcome ── */
+.user-cell-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-primary;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 4 12;
+    -fx-cursor: hand;
+}
+.user-cell-btn:hover {
+    -fx-background-color: -df-primary;
+    -fx-text-fill: -df-primary-foreground;
+    -fx-border-color: -df-primary;
+}
+
+/* ── Welcome Screen ── */
 
 .welcome-content {
     -fx-alignment: center;
 }
 
 .welcome-title {
-    -fx-font-size: 36px;
+    -fx-font-size: 28px;
     -fx-font-weight: 800;
-    -fx-text-fill: -df-primary;
+    -fx-text-fill: -df-foreground;
+}
+
+.welcome-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: -df-muted-foreground;
 }
 
 /* ── Settings ── */
 
-.settings-panel {
+.settings-view {
+    -fx-background-color: -df-background;
+}
+
+.settings-header {
+    -fx-font-size: 22px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -df-foreground;
+}
+
+.settings-section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -df-muted-foreground;
+}
+
+.settings-card {
+    -fx-background-color: -df-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 10;
     -fx-padding: 16;
+}
+
+.settings-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -df-foreground;
+}
+
+.settings-description {
+    -fx-font-size: 12px;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-wrap-text: true;
+}
+
+.settings-version {
+    -fx-font-size: 12px;
+    -fx-text-fill: -df-muted-foreground;
+}
+
+/* ── Toggle Switch Overrides ── */
+
+.toggle-switch .thumb-area {
+    -fx-background-color: -df-muted;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+}
+.toggle-switch:selected .thumb-area {
+    -fx-background-color: -df-primary;
+    -fx-border-color: -df-primary;
+}
+.toggle-switch .thumb {
+    -fx-background-color: -df-foreground;
+}
+
+/* ── Empty State ── */
+
+.empty-state {
+    -fx-alignment: center;
+}
+
+.empty-state-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: -df-muted-foreground;
 }
 
 /* ── Update Dialog ── */

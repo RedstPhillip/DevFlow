@@ -3,15 +3,20 @@
 }
 
 .chat-header {
-    -fx-background-color: -df-card;
+    -fx-background-color: -df-background;
     -fx-border-color: -df-border;
     -fx-border-width: 0 0 1 0;
 }
 
 .chat-header-name {
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
+}
+
+.chat-header-status {
+    -fx-font-size: 11px;
+    -fx-text-fill: -df-muted-foreground;
 }
 
 .messages-scroll,
@@ -25,32 +30,35 @@
 
 .bubble-own {
     -fx-background-color: -df-primary;
-    -fx-background-radius: 12 12 4 12;
+    -fx-background-radius: 16 16 4 16;
+    -fx-padding: 10 14;
 }
 
 .bubble-own-text {
     -fx-text-fill: -df-primary-foreground;
+    -fx-font-size: 13px;
 }
 
 .bubble-other {
     -fx-background-color: -df-secondary;
-    -fx-background-radius: 12 12 12 4;
+    -fx-background-radius: 16 16 16 4;
     -fx-border-color: -df-border;
-    -fx-border-radius: 12 12 12 4;
+    -fx-border-radius: 16 16 16 4;
+    -fx-padding: 10 14;
 }
 
 .bubble-other-text {
     -fx-text-fill: -df-foreground;
+    -fx-font-size: 13px;
 }
 
 .bubble-time {
     -fx-font-size: 10px;
     -fx-text-fill: -df-muted-foreground;
-    -fx-opacity: 0.7;
 }
 
 .chat-input-bar {
-    -fx-background-color: -df-card;
+    -fx-background-color: -df-background;
     -fx-border-color: -df-border;
     -fx-border-width: 1 0 0 0;
 }
@@ -59,12 +67,27 @@
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
-    -fx-border-color: transparent;
-    -fx-padding: 8 12;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: -df-border;
+    -fx-border-width: 1;
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
 }
-
 .chat-input:focused {
     -fx-border-color: -df-ring;
+}
+
+.chat-send-btn {
+    -fx-background-color: -df-primary;
+    -fx-text-fill: -df-primary-foreground;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-padding: 8 18;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+.chat-send-btn:hover {
+    -fx-opacity: 0.85;
 }
