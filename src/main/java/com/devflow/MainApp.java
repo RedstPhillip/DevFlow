@@ -1,27 +1,25 @@
 package com.devflow;
 
 import atlantafx.base.theme.PrimerDark;
+import com.devflow.config.AppConfig;
+import com.devflow.config.TokenStore;
+import com.devflow.controller.MainController;
+import com.devflow.service.UpdateService;
+import com.devflow.view.UpdateDialog;
 import javafx.application.Application;
-import javafx.collections.FXCollections;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import org.controlsfx.control.CheckComboBox;
-import org.controlsfx.control.Notifications;
-import org.controlsfx.control.PopOver;
-import org.controlsfx.control.StatusBar;
-import org.controlsfx.control.ToggleSwitch;
+import javafx.stage.StageStyle;
 
 public class MainApp extends Application {
 
@@ -29,202 +27,87 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
-        VBox content = new VBox(20);
-        content.getStyleClass().addAll("app-root", "showcase-content");
-        content.setPadding(new Insets(24));
+        stage.setTitle("DevFlow " + AppConfig.APP_VERSION);
+        stage.setMinWidth(800);
+        stage.setMinHeight(500);
 
-        Label title = new Label("DevFlow Theme Showcase");
-        title.getStyleClass().add("title");
+        MainController mainController = new MainController(stage);
 
-        Label subtitle = new Label("JavaFX + AtlantaFX mit allen Theme-Rollen im direkten Vergleich");
-        subtitle.getStyleClass().add("muted");
-
-        FlowPane tokens = new FlowPane(12, 12);
-        tokens.getStyleClass().add("token-grid");
-        tokens.getChildren().addAll(
-            colorToken("Background", "#0a0a0a", "surface-background", "text-foreground"),
-            colorToken("Foreground", "#fafafa", "surface-foreground", "text-background"),
-            colorToken("Card", "#171717", "surface-card", "text-card-foreground"),
-            colorToken("Popover", "#262626", "surface-popover", "text-popover-foreground"),
-            colorToken("Primary", "#2b7fff", "surface-primary", "text-primary-foreground"),
-            colorToken("Secondary", "#262626", "surface-secondary", "text-secondary-foreground"),
-            colorToken("Muted", "#262626", "surface-muted", "text-muted-foreground"),
-            colorToken("Accent", "#404040", "surface-accent", "text-accent-foreground"),
-            colorToken("Destructive", "#ff6467", "surface-destructive", "text-destructive-foreground"),
-            colorToken("Border", "#282828", "surface-border", "text-foreground"),
-            colorToken("Input", "#343434", "surface-input", "text-foreground"),
-            colorToken("Ring", "#737373", "surface-ring", "text-background")
-        );
-
-        VBox componentDemo = createComponentDemo();
-        VBox controlsFxDemo = createControlsFxDemo(stage);
-        VBox contextDemo = createContextDemo();
-
-        content.getChildren().addAll(
-            title,
-            subtitle,
-            new Separator(),
-            section("Farbrollen", "Alle definierten Theme-Werte als Tokens", tokens),
-            section("Komponenten", "Buttons, Inputs und Zustandsfarben", componentDemo),
-            section("ControlsFX", "Interaktive ControlsFX-Komponenten im Einsatz", controlsFxDemo),
-            section("Kontextflaechen", "Card- und Popover-Oberflaechen in Kombination", contextDemo)
-        );
-
-        ScrollPane scrollPane = new ScrollPane(content);
-        scrollPane.getStyleClass().add("showcase-scroll");
-        scrollPane.setFitToWidth(true);
-
-        Scene scene = new Scene(scrollPane, 980, 700);
-        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
-
-        stage.setTitle("DevFlow UI");
-        stage.setScene(scene);
-        stage.show();
+        checkForUpdates(stage, () -> mainController.start());
     }
 
-    private VBox createComponentDemo() {
-        TextField input = new TextField();
-        input.setPromptText("Input-Feld mit Ring-Farbe bei Fokus");
-        input.setMaxWidth(320);
+    private void checkForUpdates(Stage stage, Runnable onComplete) {
+        String pat = TokenStore.getInstance().getGithubPat();
 
-        Button primaryButton = new Button("Primary Action");
-        primaryButton.getStyleClass().add("button-primary");
+        if (pat == null || pat.isBlank()) {
+            onComplete.run();
+            showPatDialogIfNeeded(stage);
+            return;
+        }
 
-        Button secondaryButton = new Button("Secondary");
-        secondaryButton.getStyleClass().add("button-secondary");
-
-        Button destructiveButton = new Button("Delete");
-        destructiveButton.getStyleClass().add("button-destructive");
-
-        HBox actions = new HBox(10, primaryButton, secondaryButton, destructiveButton);
-
-        Label accentBadge = new Label("Accent Badge");
-        accentBadge.getStyleClass().addAll("badge", "surface-accent", "text-accent-foreground");
-
-        Label mutedBadge = new Label("Muted Info");
-        mutedBadge.getStyleClass().addAll("badge", "surface-muted", "text-muted-foreground");
-
-        HBox badges = new HBox(8, accentBadge, mutedBadge);
-
-        VBox card = new VBox(14,
-            new Label("Interaktionsdemo"),
-            input,
-            actions,
-            badges
-        );
-        card.getStyleClass().add("card");
-        card.setPadding(new Insets(16));
-        return card;
+        UpdateService updateService = new UpdateService();
+        updateService.checkForUpdate()
+                .thenAcceptAsync(updateInfo -> {
+                    onComplete.run();
+                    if (updateInfo != null) {
+                        UpdateDialog dialog = new UpdateDialog(stage, updateInfo, updateService);
+                        dialog.showAndWait();
+                    }
+                }, Platform::runLater)
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> {
+                        System.err.println("Update check failed: " + ex.getMessage());
+                        onComplete.run();
+                    });
+                    return null;
+                });
     }
 
-    private VBox createControlsFxDemo(Stage stage) {
-        CheckComboBox<String> checkComboBox = new CheckComboBox<>(
-            FXCollections.observableArrayList("Backlog", "In Progress", "Review", "Done")
-        );
-        checkComboBox.setMaxWidth(320);
-        checkComboBox.getCheckModel().checkIndices(1);
+    private void showPatDialogIfNeeded(Stage owner) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.NONE);
+        dialog.initOwner(owner);
+        dialog.initStyle(StageStyle.UNDECORATED);
+        dialog.setTitle("GitHub PAT");
 
-        ToggleSwitch liveUpdates = new ToggleSwitch();
-        liveUpdates.setText("Live Updates aktiv");
-        liveUpdates.setSelected(true);
+        VBox root = new VBox(12);
+        root.getStyleClass().add("update-dialog");
+        root.setPadding(new Insets(24));
+        root.setMaxWidth(420);
 
-        StatusBar statusBar = new StatusBar();
-        statusBar.setText("Status: 1 Filter aktiv");
-        statusBar.setProgress(0.55);
+        Label title = new Label("GitHub Personal Access Token");
+        title.getStyleClass().add("section-title");
 
-        VBox popOverContent = new VBox(8,
-            new Label("PopOver Inhalt"),
-            new Label("Overlay-Demo fuer Details und kontextuelle Aktionen.")
-        );
-        popOverContent.setPadding(new Insets(10));
+        Label info = new Label("Optional: Fuer automatische Updates von der privaten Repo einen PAT eingeben (repo scope).");
+        info.getStyleClass().add("muted");
+        info.setWrapText(true);
 
-        PopOver popOver = new PopOver(popOverContent);
-        popOver.setTitle("ControlsFX PopOver");
-        popOver.setDetachable(false);
+        PasswordField patField = new PasswordField();
+        patField.setPromptText("ghp_...");
 
-        Button popOverButton = new Button("Open PopOver");
-        popOverButton.getStyleClass().add("button-secondary");
-        popOverButton.setOnAction(event -> {
-            if (popOver.isShowing()) {
-                popOver.hide();
-            } else {
-                popOver.show(popOverButton);
+        Button saveButton = new Button("Speichern");
+        saveButton.getStyleClass().add("button-primary");
+        saveButton.setOnAction(e -> {
+            String val = patField.getText().trim();
+            if (!val.isBlank()) {
+                TokenStore.getInstance().setGithubPat(val);
             }
+            dialog.close();
         });
 
-        Button notifyButton = new Button("Show Notification");
-        notifyButton.getStyleClass().add("button-primary");
-        notifyButton.setOnAction(event -> Notifications.create()
-            .title("ControlsFX Notification")
-            .text("Filter wurden aktualisiert.")
-            .owner(stage)
-            .position(Pos.BOTTOM_RIGHT)
-            .showInformation()
-        );
+        Button skipButton = new Button("Ueberspringen");
+        skipButton.getStyleClass().add("button-secondary");
+        skipButton.setOnAction(e -> dialog.close());
 
-        HBox actions = new HBox(10, notifyButton, popOverButton, liveUpdates);
-        actions.setAlignment(Pos.CENTER_LEFT);
+        HBox buttons = new HBox(10, saveButton, skipButton);
+        buttons.setAlignment(Pos.CENTER_RIGHT);
 
-        VBox card = new VBox(14,
-            new Label("ControlsFX Komponenten"),
-            checkComboBox,
-            actions,
-            statusBar
-        );
-        card.getStyleClass().add("card");
-        card.setPadding(new Insets(16));
-        return card;
-    }
+        root.getChildren().addAll(title, info, patField, buttons);
 
-    private VBox createContextDemo() {
-        Label cardLabel = new Label("Card Context");
-        cardLabel.getStyleClass().add("text-card-foreground");
-
-        Label cardText = new Label("Diese Flaeche nutzt Card + Card Foreground.");
-        cardText.getStyleClass().add("muted");
-
-        VBox cardSurface = new VBox(6, cardLabel, cardText);
-        cardSurface.getStyleClass().addAll("context-box", "surface-card");
-
-        Label popoverLabel = new Label("Popover Preview");
-        popoverLabel.getStyleClass().add("text-popover-foreground");
-
-        Label popoverText = new Label("Popover + Border fuer Overlay-artige Inhalte.");
-        popoverText.getStyleClass().add("text-popover-foreground");
-
-        VBox popoverSurface = new VBox(6, popoverLabel, popoverText);
-        popoverSurface.getStyleClass().addAll("context-box", "surface-popover");
-
-        HBox row = new HBox(12, cardSurface, popoverSurface);
-        HBox.setHgrow(cardSurface, Priority.ALWAYS);
-        HBox.setHgrow(popoverSurface, Priority.ALWAYS);
-        return new VBox(row);
-    }
-
-    private VBox section(String heading, String description, Node content) {
-        Label sectionTitle = new Label(heading);
-        sectionTitle.getStyleClass().add("section-title");
-
-        Label sectionDescription = new Label(description);
-        sectionDescription.getStyleClass().add("muted");
-
-        VBox box = new VBox(12, sectionTitle, sectionDescription, content);
-        box.getStyleClass().add("section");
-        return box;
-    }
-
-    private VBox colorToken(String role, String hex, String surfaceClass, String textClass) {
-        Label roleLabel = new Label(role);
-        roleLabel.getStyleClass().addAll("token-title", textClass);
-
-        Label hexLabel = new Label(hex);
-        hexLabel.getStyleClass().addAll("token-hex", textClass);
-
-        VBox token = new VBox(8, roleLabel, hexLabel);
-        token.getStyleClass().addAll("token", surfaceClass);
-        token.setPadding(new Insets(14));
-        token.setPrefWidth(180);
-        return token;
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
+        dialog.setScene(scene);
+        dialog.show();
     }
 
     public static void main(String[] args) {

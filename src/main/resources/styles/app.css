@@ -191,3 +191,161 @@
 .text-muted-foreground { -fx-text-fill: -df-muted-foreground; }
 .text-accent-foreground { -fx-text-fill: -df-accent-foreground; }
 .text-destructive-foreground { -fx-text-fill: -df-destructive-foreground; }
+
+/* ── Layout ── */
+
+.main-layout {
+    -fx-background-color: -df-background;
+}
+
+.activity-bar {
+    -fx-background-color: #050505;
+    -fx-border-color: -df-border;
+    -fx-border-width: 0 1 0 0;
+}
+
+.activity-bar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-font-size: 18px;
+    -fx-padding: 10;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-cursor: hand;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-pref-width: 40;
+    -fx-pref-height: 40;
+}
+
+.activity-bar-button:hover {
+    -fx-background-color: -df-secondary;
+    -fx-text-fill: -df-foreground;
+}
+
+.activity-bar-button-active {
+    -fx-text-fill: -df-foreground;
+    -fx-border-color: transparent transparent transparent -df-primary;
+    -fx-border-width: 0 0 0 2;
+}
+
+.side-panel {
+    -fx-background-color: -df-card;
+    -fx-border-color: -df-border;
+    -fx-border-width: 0 1 0 0;
+}
+
+.content-area {
+    -fx-background-color: -df-background;
+}
+
+.panel-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -df-foreground;
+    -fx-border-color: -df-border;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* ── Chat List ── */
+
+.chat-list-panel {
+    -fx-background-color: -df-card;
+}
+
+.chat-list {
+    -fx-background-color: -df-card;
+}
+
+.chat-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.chat-list .list-cell:selected {
+    -fx-background-color: -df-secondary;
+}
+
+.chat-list .list-cell:hover {
+    -fx-background-color: -df-accent;
+}
+
+.chat-cell-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -df-foreground;
+}
+
+.chat-cell-preview {
+    -fx-font-size: 12px;
+    -fx-text-fill: -df-muted-foreground;
+}
+
+.chat-cell-time {
+    -fx-font-size: 11px;
+    -fx-text-fill: -df-muted-foreground;
+}
+
+/* ── User List ── */
+
+.user-list-panel {
+    -fx-background-color: -df-card;
+}
+
+.user-list {
+    -fx-background-color: -df-card;
+}
+
+.user-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.user-list .list-cell:selected {
+    -fx-background-color: -df-secondary;
+}
+
+.user-list .list-cell:hover {
+    -fx-background-color: -df-accent;
+}
+
+.user-cell-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -df-foreground;
+}
+
+/* ── Welcome ── */
+
+.welcome-content {
+    -fx-alignment: center;
+}
+
+.welcome-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -df-primary;
+}
+
+/* ── Settings ── */
+
+.settings-panel {
+    -fx-padding: 16;
+}
+
+/* ── Update Dialog ── */
+
+.update-dialog {
+    -fx-background-color: -df-card;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.update-notes {
+    -fx-control-inner-background: -df-input;
+    -fx-text-fill: -df-foreground;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}

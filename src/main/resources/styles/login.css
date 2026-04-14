@@ -1,0 +1,43 @@
+.login-root {
+    -fx-background-color: -df-background;
+}
+
+.login-card {
+    -fx-background-color: -df-card;
+    -fx-background-radius: 16;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 20, 0, 0, 4);
+}
+
+.login-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -df-primary;
+}
+
+.login-field {
+    -fx-background-color: -df-input;
+    -fx-text-fill: -df-foreground;
+    -fx-prompt-text-fill: -df-muted-foreground;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: transparent;
+    -fx-padding: 10 12;
+    -fx-font-size: 14px;
+}
+
+.login-field:focused {
+    -fx-border-color: -df-ring;
+}
+
+.login-button {
+    -fx-padding: 10 20;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+}
+
+.login-error {
+    -fx-text-fill: -df-destructive;
+    -fx-font-size: 13px;
+}

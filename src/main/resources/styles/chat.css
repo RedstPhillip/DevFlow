@@ -1,0 +1,70 @@
+.chat-view {
+    -fx-background-color: -df-background;
+}
+
+.chat-header {
+    -fx-background-color: -df-card;
+    -fx-border-color: -df-border;
+    -fx-border-width: 0 0 1 0;
+}
+
+.chat-header-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -df-foreground;
+}
+
+.messages-scroll,
+.messages-scroll > .viewport {
+    -fx-background-color: -df-background;
+}
+
+.messages-box {
+    -fx-background-color: -df-background;
+}
+
+.bubble-own {
+    -fx-background-color: -df-primary;
+    -fx-background-radius: 12 12 4 12;
+}
+
+.bubble-own-text {
+    -fx-text-fill: -df-primary-foreground;
+}
+
+.bubble-other {
+    -fx-background-color: -df-secondary;
+    -fx-background-radius: 12 12 12 4;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 12 12 12 4;
+}
+
+.bubble-other-text {
+    -fx-text-fill: -df-foreground;
+}
+
+.bubble-time {
+    -fx-font-size: 10px;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-opacity: 0.7;
+}
+
+.chat-input-bar {
+    -fx-background-color: -df-card;
+    -fx-border-color: -df-border;
+    -fx-border-width: 1 0 0 0;
+}
+
+.chat-input {
+    -fx-background-color: -df-input;
+    -fx-text-fill: -df-foreground;
+    -fx-prompt-text-fill: -df-muted-foreground;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: transparent;
+    -fx-padding: 8 12;
+}
+
+.chat-input:focused {
+    -fx-border-color: -df-ring;
+}
