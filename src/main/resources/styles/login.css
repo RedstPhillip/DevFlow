@@ -7,7 +7,7 @@
     -fx-background-radius: 16;
     -fx-border-color: -df-border;
     -fx-border-radius: 16;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 20, 0, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 30, 0, 0, 6);
 }
 
 .login-title {

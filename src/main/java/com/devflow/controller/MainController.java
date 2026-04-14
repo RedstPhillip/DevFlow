@@ -61,6 +61,7 @@ public class MainController {
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
         scene.getStylesheets().add(getClass().getResource("/styles/login.css").toExternalForm());
         stage.setScene(scene);
+        stage.show();
     }
 
     public void showMainLayout() {
@@ -83,6 +84,7 @@ public class MainController {
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
         scene.getStylesheets().add(getClass().getResource("/styles/chat.css").toExternalForm());
         stage.setScene(scene);
+        stage.show();
     }
 
     private void onNavigate(String target) {

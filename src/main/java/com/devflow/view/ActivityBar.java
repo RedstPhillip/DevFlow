@@ -26,13 +26,13 @@ public class ActivityBar extends VBox {
         setMinWidth(48);
         setMaxWidth(48);
 
-        chatButton = createIconButton("\uD83D\uDCAC", "Chats", () -> onNavigate.accept("chats"));
-        usersButton = createIconButton("\uD83D\uDC65", "Benutzer", () -> onNavigate.accept("users"));
+        chatButton = createIconButton("\u2261", "Chats", () -> onNavigate.accept("chats"));
+        usersButton = createIconButton("\u263A", "Benutzer", () -> onNavigate.accept("users"));
 
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        settingsButton = createIconButton("\u2699", "Einstellungen", () -> onNavigate.accept("settings"));
+        settingsButton = createIconButton("\u2731", "Einstellungen", () -> onNavigate.accept("settings"));
 
         getChildren().addAll(chatButton, usersButton, spacer, settingsButton);
 
