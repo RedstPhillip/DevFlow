@@ -52,10 +52,9 @@ public class MainApp extends Application {
 
     private void loadFonts() {
         String[] fonts = {
-                "/fonts/Inter-Regular.ttf",
-                "/fonts/Inter-Medium.ttf",
-                "/fonts/Inter-SemiBold.ttf",
-                "/fonts/Inter-Bold.ttf"
+                "/fonts/Roboto-Regular.ttf",
+                "/fonts/Roboto-Medium.ttf",
+                "/fonts/Roboto-Bold.ttf"
         };
         for (String path : fonts) {
             try {

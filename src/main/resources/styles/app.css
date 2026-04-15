@@ -3,7 +3,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 .root {
-    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-family: "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-smoothing-type: lcd;
     -fx-font-size: 13.5px;
 
