@@ -8,6 +8,7 @@ import com.devflow.service.UpdateService;
 import com.devflow.view.UpdateDialog;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -15,6 +16,7 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        loadFonts();
         ThemeManager.getInstance().applyInitial();
 
         stage.initStyle(StageStyle.UNDECORATED);
@@ -48,7 +50,28 @@ public class MainApp extends Application {
                 });
     }
 
+    private void loadFonts() {
+        String[] fonts = {
+                "/fonts/Inter-Regular.ttf",
+                "/fonts/Inter-Medium.ttf",
+                "/fonts/Inter-SemiBold.ttf",
+                "/fonts/Inter-Bold.ttf"
+        };
+        for (String path : fonts) {
+            try {
+                var url = getClass().getResource(path);
+                if (url != null) {
+                    Font.loadFont(url.toExternalForm(), 13);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to load font " + path + ": " + e.getMessage());
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        // Crisper text rendering on Windows/JavaFX
+        System.setProperty("prism.lcdtext", "true");
         launch(args);
     }
 }

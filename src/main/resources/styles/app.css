@@ -5,6 +5,7 @@
 .root {
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
     -fx-font-smoothing-type: lcd;
+    -fx-font-size: 13.5px;
 
     -df-background: #0a0a0a;
     -df-foreground: #fafafa;
