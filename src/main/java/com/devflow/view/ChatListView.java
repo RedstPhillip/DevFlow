@@ -1,10 +1,10 @@
 package com.devflow.view;
 
 import com.devflow.model.Chat;
-import com.devflow.model.User;
 import com.devflow.util.DateFormatter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -22,15 +22,18 @@ public class ChatListView extends StackPane {
 
     private final ListView<Chat> listView;
     private final ObservableList<Chat> chats;
+    private final FilteredList<Chat> filtered;
     private final Label emptyLabel;
     private Consumer<Chat> onChatSelected;
     private long currentUserId;
+    private String filterText = "";
 
     public ChatListView() {
         getStyleClass().add("chat-list-panel");
         chats = FXCollections.observableArrayList();
+        filtered = new FilteredList<>(chats, c -> true);
 
-        listView = new ListView<>(chats);
+        listView = new ListView<>(filtered);
         listView.getStyleClass().add("list-view-clean");
         listView.setCellFactory(lv -> new ChatListCell());
 
@@ -45,7 +48,7 @@ public class ChatListView extends StackPane {
         StackPane emptyState = new StackPane(emptyLabel);
         emptyState.getStyleClass().add("empty-state");
         emptyState.setPadding(new Insets(40));
-        emptyState.visibleProperty().bind(javafx.beans.binding.Bindings.isEmpty(chats));
+        emptyState.visibleProperty().bind(javafx.beans.binding.Bindings.isEmpty(filtered));
         emptyState.managedProperty().bind(emptyState.visibleProperty());
 
         getChildren().addAll(listView, emptyState);
@@ -61,6 +64,16 @@ public class ChatListView extends StackPane {
                     break;
                 }
             }
+        }
+    }
+
+    public void setFilter(String text) {
+        this.filterText = text == null ? "" : text.trim().toLowerCase();
+        if (filterText.isEmpty()) {
+            filtered.setPredicate(c -> true);
+        } else {
+            filtered.setPredicate(c ->
+                    c.getDisplayName(currentUserId).toLowerCase().contains(filterText));
         }
     }
 
@@ -82,21 +95,18 @@ public class ChatListView extends StackPane {
                 return;
             }
 
-            User other = chat.getOtherParticipant(currentUserId);
-            String name = other != null ? other.getUsername() : "Unbekannt";
+            String name = chat.getDisplayName(currentUserId);
 
-            Avatar avatar = new Avatar(name, 40);
+            Avatar avatar = new Avatar(chat.isGroup() ? "# " + name : name, 40);
 
-            Label nameLabel = new Label(name);
+            Label nameLabel = new Label((chat.isGroup() ? "\u2023 " : "") + name);
             nameLabel.getStyleClass().add("chat-cell-name");
 
             Label previewLabel = new Label();
             previewLabel.getStyleClass().add("chat-cell-preview");
             if (chat.getLastMessage() != null) {
                 String preview = chat.getLastMessage().getContent();
-                if (preview.length() > 42) {
-                    preview = preview.substring(0, 42) + "…";
-                }
+                if (preview.length() > 42) preview = preview.substring(0, 42) + "\u2026";
                 previewLabel.setText(preview);
             } else {
                 previewLabel.setText("Noch keine Nachrichten");

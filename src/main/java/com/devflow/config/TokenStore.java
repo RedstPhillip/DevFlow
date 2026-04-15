@@ -84,4 +84,11 @@ public class TokenStore {
     public boolean hasAuthToken() {
         return authToken != null && authToken.getAccessToken() != null;
     }
+
+    public void updateUser(com.devflow.model.User user) {
+        if (authToken != null) {
+            authToken.setUser(user);
+            save();
+        }
+    }
 }

@@ -9,6 +9,7 @@ import com.devflow.view.UpdateDialog;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class MainApp extends Application {
 
@@ -16,6 +17,7 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         ThemeManager.getInstance().applyInitial();
 
+        stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle("DevFlow " + AppConfig.APP_VERSION);
         stage.setMinWidth(900);
         stage.setMinHeight(600);

@@ -7,6 +7,8 @@ public class User {
     private long id;
     private String username;
     private LocalDateTime createdAt;
+    private boolean online;
+    private String avatarUrl;
 
     public User() {}
 
@@ -25,10 +27,14 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public boolean isOnline() { return online; }
+    public void setOnline(boolean online) { this.online = online; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+
     @Override
-    public String toString() {
-        return username;
-    }
+    public String toString() { return username; }
 
     @Override
     public boolean equals(Object o) {

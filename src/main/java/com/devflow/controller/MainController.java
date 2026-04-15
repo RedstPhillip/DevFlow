@@ -10,15 +10,19 @@ import com.devflow.service.MessageService;
 import com.devflow.service.UserService;
 import com.devflow.view.ChatListView;
 import com.devflow.view.ChatView;
+import com.devflow.view.CustomTitleBar;
+import com.devflow.view.GroupSettingsDialog;
 import com.devflow.view.LoginView;
 import com.devflow.view.MainLayout;
+import com.devflow.view.NewChatDialog;
+import com.devflow.view.ProfileDialog;
 import com.devflow.view.SettingsView;
 import com.devflow.view.Sidebar;
-import com.devflow.view.UserListView;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -31,11 +35,9 @@ public class MainController {
 
     private ChatListController chatListController;
     private ChatViewController chatViewController;
-    private UserListController userListController;
     private LoginController loginController;
 
     private ChatListView chatListView;
-    private UserListView userListView;
 
     private final AuthService authService;
     private final UserService userService;
@@ -63,37 +65,42 @@ public class MainController {
         LoginView loginView = new LoginView();
         loginController = new LoginController(loginView, authService, this);
 
-        setScene(loginView, "/styles/login.css");
+        CustomTitleBar titleBar = new CustomTitleBar(stage, "DevFlow");
+        VBox root = new VBox(titleBar, loginView);
+        VBox.setVgrow(loginView, Priority.ALWAYS);
+        root.getStyleClass().add("login-shell");
+
+        setScene(root, "/styles/login.css");
     }
 
     public void showMainLayout() {
         stopAllPolling();
 
+        CustomTitleBar titleBar = new CustomTitleBar(stage, "DevFlow");
+
         Sidebar sidebar = new Sidebar();
         sidebar.setCurrentUser(getCurrentUser());
-        mainLayout = new MainLayout(sidebar);
+
+        mainLayout = new MainLayout(titleBar, sidebar);
 
         chatListView = new ChatListView();
         chatListController = new ChatListController(chatListView, chatService, this);
+        sidebar.setListNode(chatListView);
 
-        userListView = new UserListView();
-        userListView.setCurrentUserId(getCurrentUser().getId());
-        userListController = new UserListController(userListView, userService, this);
-
-        sidebar.setOnChatsTab(() -> {
-            mainLayout.setSidebarContent(chatListView);
+        sidebar.setOnChatsClick(() -> {
+            mainLayout.setSidebarListNode(chatListView);
             chatListController.startRefresh();
+            showWelcomeContent();
         });
-        sidebar.setOnUsersTab(() -> {
-            chatListController.stopRefresh();
-            mainLayout.setSidebarContent(userListView);
-            userListController.load();
+        sidebar.setOnSettingsClick(this::showSettings);
+        sidebar.setOnNewChat(this::openNewChatDialog);
+        sidebar.setOnProfileClick(this::openProfileDialog);
+        sidebar.setOnSearch(query -> {
+            if (chatListView != null) chatListView.setFilter(query);
         });
-        sidebar.setOnNewChat(() -> sidebar.selectTab(Sidebar.Tab.USERS));
-        sidebar.setOnSettings(this::showSettings);
 
-        // Trigger initial tab
-        sidebar.selectTab(Sidebar.Tab.CHATS);
+        sidebar.setActive(Sidebar.RailKey.CHATS);
+        chatListController.startRefresh();
 
         showWelcomeContent();
 
@@ -116,15 +123,61 @@ public class MainController {
         ChatView chatView = new ChatView();
         User currentUser = getCurrentUser();
         chatViewController = new ChatViewController(chatView, messageService, chat, currentUser);
+        if (chat.isGroup()) {
+            chatViewController.setOnOpenGroupSettings(() -> openGroupSettings(chat));
+        }
         mainLayout.setMainContent(chatView);
         chatViewController.startPolling();
     }
 
+    private void openGroupSettings(Chat chat) {
+        GroupSettingsDialog dialog = new GroupSettingsDialog(
+                mainLayout.getModalHost(),
+                mainLayout.getBlurTarget(),
+                chatService, userService,
+                chat, getCurrentUser().getId(),
+                updated -> {
+                    if (updated == null) {
+                        // User left / group dissolved
+                        chatListController.startRefresh();
+                        showWelcomeContent();
+                    } else {
+                        if (chatViewController != null && chatViewController.getChat().getId() == updated.getId()) {
+                            chatViewController.refreshFrom(updated);
+                        }
+                        chatListController.startRefresh();
+                    }
+                });
+        dialog.show();
+    }
+
+    private void openNewChatDialog() {
+        NewChatDialog dialog = new NewChatDialog(
+                mainLayout.getModalHost(),
+                mainLayout.getBlurTarget(),
+                userService, chatService,
+                getCurrentUser().getId(),
+                chat -> {
+                    chatListController.startRefresh();
+                    openChat(chat);
+                });
+        dialog.show();
+    }
+
+    private void openProfileDialog() {
+        ProfileDialog dialog = new ProfileDialog(
+                mainLayout.getModalHost(),
+                mainLayout.getBlurTarget(),
+                userService, getCurrentUser(),
+                updated -> {
+                    TokenStore.getInstance().updateUser(updated);
+                    mainLayout.getSidebar().setCurrentUser(updated);
+                });
+        dialog.show();
+    }
+
     public void startDmWith(User otherUser) {
-        chatService.getOrCreateDmChat(otherUser.getId()).thenAcceptAsync(chat -> {
-            openChat(chat);
-            mainLayout.getSidebar().selectTab(Sidebar.Tab.CHATS);
-        }, Platform::runLater);
+        chatService.getOrCreateDmChat(otherUser.getId()).thenAcceptAsync(this::openChat, Platform::runLater);
     }
 
     private void showWelcomeContent() {

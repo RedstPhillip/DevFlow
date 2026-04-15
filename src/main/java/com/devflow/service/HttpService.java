@@ -45,6 +45,25 @@ public class HttpService {
         return sendWithRetry(builder.build());
     }
 
+    public CompletableFuture<HttpResponse<String>> put(String url, Object body) {
+        String json = body instanceof String ? (String) body : JsonUtil.toJson(body);
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(json));
+        addAuthHeader(builder);
+        return sendWithRetry(builder.build());
+    }
+
+    public CompletableFuture<HttpResponse<String>> delete(String url) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .DELETE();
+        addAuthHeader(builder);
+        return sendWithRetry(builder.build());
+    }
+
     public CompletableFuture<HttpResponse<String>> postNoAuth(String url, Object body) {
         String json = body instanceof String ? (String) body : JsonUtil.toJson(body);
         HttpRequest request = HttpRequest.newBuilder()

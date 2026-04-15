@@ -5,6 +5,7 @@ import com.devflow.model.Chat;
 import com.devflow.model.Message;
 import com.devflow.model.User;
 import com.devflow.service.MessageService;
+import com.devflow.view.Avatar;
 import com.devflow.view.ChatView;
 import com.devflow.view.MessageBubble;
 import javafx.animation.KeyFrame;
@@ -12,16 +13,18 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.util.Duration;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChatViewController {
 
     private final ChatView view;
     private final MessageService messageService;
-    private final Chat chat;
+    private Chat chat;
     private final User currentUser;
     private Timeline pollingTimeline;
     private long lastMessageId = 0;
+    private Runnable onOpenGroupSettings;
 
     public ChatViewController(ChatView view, MessageService messageService, Chat chat, User currentUser) {
         this.view = view;
@@ -29,11 +32,44 @@ public class ChatViewController {
         this.chat = chat;
         this.currentUser = currentUser;
 
-        User other = chat.getOtherParticipant(currentUser.getId());
-        view.getHeaderName().setText(other != null ? other.getUsername() : "Chat");
-
+        setupHeader();
         bindEvents();
         loadMessages();
+    }
+
+    public void setOnOpenGroupSettings(Runnable r) {
+        this.onOpenGroupSettings = r;
+        view.getInfoButton().setVisible(chat.isGroup());
+        view.getInfoButton().setManaged(chat.isGroup());
+        view.getInfoButton().setOnAction(e -> { if (onOpenGroupSettings != null) onOpenGroupSettings.run(); });
+    }
+
+    public void refreshFrom(Chat updated) {
+        this.chat = updated;
+        setupHeader();
+    }
+
+    private void setupHeader() {
+        String displayName = chat.getDisplayName(currentUser.getId());
+        view.getHeaderName().setText(displayName);
+
+        Avatar avatar = new Avatar(displayName, 40);
+        view.getAvatarHost().getChildren().setAll(avatar);
+
+        if (chat.isGroup()) {
+            int count = chat.getParticipants() == null ? 0 : chat.getParticipants().size();
+            view.getHeaderStatus().setText(count + " Mitglieder");
+            view.getHeaderStatus().getStyleClass().remove("chat-header-status-online");
+            if (!view.getHeaderStatus().getStyleClass().contains("chat-header-status")) {
+                view.getHeaderStatus().getStyleClass().add("chat-header-status");
+            }
+        } else {
+            User other = chat.getOtherParticipant(currentUser.getId());
+            boolean online = other != null && other.isOnline();
+            view.getHeaderStatus().setText(online ? "Online" : "Offline");
+            view.getHeaderStatus().getStyleClass().removeAll("chat-header-status", "chat-header-status-online");
+            view.getHeaderStatus().getStyleClass().add(online ? "chat-header-status-online" : "chat-header-status");
+        }
     }
 
     private void bindEvents() {
@@ -68,8 +104,12 @@ public class ChatViewController {
         messageService.getMessages(chat.getId(), null)
                 .thenAcceptAsync(messages -> {
                     view.getMessagesBox().getChildren().clear();
+                    long previousSender = -1;
                     for (Message msg : messages) {
-                        appendMessage(msg);
+                        boolean showSender = chat.isGroup() && msg.getTransmitterId() != previousSender
+                                && msg.getTransmitterId() != currentUser.getId();
+                        appendMessage(msg, showSender);
+                        previousSender = msg.getTransmitterId();
                     }
                     if (!messages.isEmpty()) {
                         lastMessageId = messages.get(messages.size() - 1).getId();
@@ -99,10 +139,23 @@ public class ChatViewController {
     }
 
     private void appendMessage(Message message) {
+        appendMessage(message, chat.isGroup() && message.getTransmitterId() != currentUser.getId());
+    }
+
+    private void appendMessage(Message message, boolean showSender) {
         boolean isOwn = message.getTransmitterId() == currentUser.getId();
-        MessageBubble bubble = new MessageBubble(message, isOwn);
+        User sender = findUser(message.getTransmitterId());
+        MessageBubble bubble = new MessageBubble(message, isOwn, sender, showSender);
         view.getMessagesBox().getChildren().add(bubble);
     }
+
+    private User findUser(long id) {
+        if (chat.getParticipants() == null) return null;
+        for (User u : chat.getParticipants()) if (u.getId() == id) return u;
+        return null;
+    }
+
+    public Chat getChat() { return chat; }
 
     public void startPolling() {
         stopPolling();
