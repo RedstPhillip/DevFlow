@@ -74,6 +74,15 @@ public class ChatListView extends StackPane {
         }
     }
 
+    public void clearSelection() {
+        suppressSelectionEvents = true;
+        try {
+            listView.getSelectionModel().clearSelection();
+        } finally {
+            suppressSelectionEvents = false;
+        }
+    }
+
     public void setFilter(String text) {
         this.filterText = text == null ? "" : text.trim().toLowerCase();
         if (filterText.isEmpty()) {

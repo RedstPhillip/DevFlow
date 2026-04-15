@@ -140,7 +140,9 @@ public class MainController {
     public void showSettings() {
         if (chatViewController != null) {
             chatViewController.stopPolling();
+            chatViewController = null;
         }
+        if (chatListView != null) chatListView.clearSelection();
         if (settingsView == null) {
             settingsView = new SettingsView();
             settingsView.setOnLogout(this::logout);
@@ -218,6 +220,11 @@ public class MainController {
     }
 
     private void showWelcomeContent() {
+        if (chatViewController != null) {
+            chatViewController.stopPolling();
+            chatViewController = null;
+        }
+        if (chatListView != null) chatListView.clearSelection();
         VBox welcome = new VBox(12);
         welcome.getStyleClass().add("welcome-content");
         welcome.setAlignment(Pos.CENTER);
