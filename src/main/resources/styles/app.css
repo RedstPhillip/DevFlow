@@ -184,11 +184,45 @@
     -fx-padding: 10 12;
     -fx-font-size: 13px;
 }
-.text-field:focused, .password-field:focused { -fx-border-color: -df-ring; }
+.text-field:focused, .password-field:focused {
+    -fx-border-color: -df-ring;
+    -fx-border-width: 1.5;
+}
 
 /* ── Main Layout ── */
 
-.main-layout { -fx-background-color: -df-background; }
+.main-layout {
+    -fx-background-color: transparent;
+    -fx-padding: 12;
+}
+.main-layout.maximized { -fx-padding: 0; }
+
+.window-frame {
+    -fx-background-color: -df-background;
+    -fx-background-radius: 10;
+    -fx-border-color: -df-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 24, 0.18, 0, 6);
+}
+.light-theme .window-frame {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 24, 0.15, 0, 6);
+}
+.window-frame.maximized {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+.window-frame > .sidebar,
+.window-frame .sidebar {
+    -fx-background-radius: 0 0 0 10;
+}
+.window-frame.maximized .sidebar {
+    -fx-background-radius: 0;
+}
+
 .content-area { -fx-background-color: -df-background; }
 
 /* ── Custom Title Bar ── */
@@ -200,6 +234,10 @@
     -fx-min-height: 38;
     -fx-max-height: 38;
     -fx-pref-height: 38;
+    -fx-background-radius: 10 10 0 0;
+}
+.window-frame.maximized .titlebar {
+    -fx-background-radius: 0;
 }
 
 .titlebar-brand {
@@ -355,8 +393,11 @@
 
 .sidebar-status {
     -fx-font-size: 11px;
-    -fx-text-fill: -df-success;
+    -fx-text-fill: -df-muted-foreground;
 }
+
+.sidebar-presence-online { -fx-fill: -df-online; }
+.sidebar-presence-offline { -fx-fill: -df-offline; }
 
 .sidebar-settings-btn {
     -fx-background-color: transparent;
@@ -506,6 +547,12 @@
 /* ── Welcome ── */
 
 .welcome-content { -fx-alignment: center; }
+.welcome-glyph {
+    -fx-font-size: 64px;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-opacity: 0.6;
+    -fx-padding: 0 0 8 0;
+}
 .welcome-title {
     -fx-font-size: 28px;
     -fx-font-weight: 700;

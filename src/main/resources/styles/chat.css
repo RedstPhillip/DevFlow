@@ -62,6 +62,7 @@
     -fx-background-color: -df-primary;
     -fx-background-radius: 16 16 4 16;
     -fx-padding: 9 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 4, 0.1, 0, 1);
 }
 
 .bubble-own-text {
@@ -75,6 +76,12 @@
     -fx-border-color: -df-border;
     -fx-border-radius: 16 16 16 4;
     -fx-padding: 9 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 4, 0.1, 0, 1);
+}
+
+.light-theme .bubble-own,
+.light-theme .bubble-other {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 4, 0.1, 0, 1);
 }
 
 .bubble-other-text {

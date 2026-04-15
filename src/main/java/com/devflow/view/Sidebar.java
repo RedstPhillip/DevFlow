@@ -13,6 +13,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 
 public class Sidebar extends HBox {
 
@@ -52,7 +53,7 @@ public class Sidebar extends HBox {
     private String activeSettingsSection;
 
     public Sidebar() {
-        getStyleClass().add("main-layout");
+        getStyleClass().add("sidebar-root");
 
         // ── Rail ──
         rail = new VBox(6);
@@ -131,9 +132,13 @@ public class Sidebar extends HBox {
 
         usernameLabel = new Label("–");
         usernameLabel.getStyleClass().add("sidebar-username");
+        Circle presenceDot = new Circle(4);
+        presenceDot.getStyleClass().add("sidebar-presence-online");
         statusLabel = new Label("Online");
         statusLabel.getStyleClass().add("sidebar-status");
-        VBox userInfo = new VBox(1, usernameLabel, statusLabel);
+        HBox statusRow = new HBox(6, presenceDot, statusLabel);
+        statusRow.setAlignment(Pos.CENTER_LEFT);
+        VBox userInfo = new VBox(2, usernameLabel, statusRow);
         userInfo.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 

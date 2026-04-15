@@ -197,6 +197,9 @@ public class NewChatDialog extends VBox {
     }
 
     private void toggleSelect(User user) {
+        // Defensive: never allow the current user to be selected, even if they
+        // somehow slipped through the list filter.
+        if (user == null || user.getId() == currentUserId) return;
         if (mode == Mode.DM) {
             // Directly open DM
             primaryButton.setDisable(true);
@@ -254,7 +257,10 @@ public class NewChatDialog extends VBox {
         String name = groupNameField.getText().trim();
         if (name.isEmpty() || selected.size() < 2) return;
         primaryButton.setDisable(true);
-        List<Long> ids = selected.stream().map(User::getId).toList();
+        List<Long> ids = selected.stream()
+                .map(User::getId)
+                .filter(id -> id != currentUserId)
+                .toList();
         chatService.createGroup(name, ids, Chat.POLICY_OWNER_ONLY)
                 .thenAcceptAsync(chat -> {
                     overlay.close();

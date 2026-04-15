@@ -25,6 +25,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class MainController {
@@ -67,11 +68,37 @@ public class MainController {
         loginController = new LoginController(loginView, authService, this);
 
         CustomTitleBar titleBar = new CustomTitleBar(stage, "DevFlow");
-        VBox root = new VBox(titleBar, loginView);
+        VBox frame = new VBox(titleBar, loginView);
         VBox.setVgrow(loginView, Priority.ALWAYS);
-        root.getStyleClass().add("login-shell");
+        frame.getStyleClass().addAll("login-shell", "window-frame");
 
-        setScene(root, "/styles/login.css");
+        StackPane outer = new StackPane(frame);
+        outer.getStyleClass().add("main-layout");
+        attachLoginMaximizeListener(outer, frame);
+
+        setScene(outer, "/styles/login.css");
+    }
+
+    private void attachLoginMaximizeListener(StackPane outer, VBox frame) {
+        javafx.beans.value.ChangeListener<Number> listener = (obs, o, n) -> {
+            var bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            boolean maximized = Math.abs(stage.getWidth() - bounds.getWidth()) < 2
+                    && Math.abs(stage.getHeight() - bounds.getHeight()) < 2
+                    && Math.abs(stage.getX() - bounds.getMinX()) < 2
+                    && Math.abs(stage.getY() - bounds.getMinY()) < 2;
+            if (maximized) {
+                if (!outer.getStyleClass().contains("maximized")) outer.getStyleClass().add("maximized");
+                if (!frame.getStyleClass().contains("maximized")) frame.getStyleClass().add("maximized");
+            } else {
+                outer.getStyleClass().remove("maximized");
+                frame.getStyleClass().remove("maximized");
+            }
+        };
+        stage.xProperty().addListener(listener);
+        stage.yProperty().addListener(listener);
+        stage.widthProperty().addListener(listener);
+        stage.heightProperty().addListener(listener);
+        Platform.runLater(() -> listener.changed(null, 0, 0));
     }
 
     public void showMainLayout() {
@@ -82,7 +109,7 @@ public class MainController {
         Sidebar sidebar = new Sidebar();
         sidebar.setCurrentUser(getCurrentUser());
 
-        mainLayout = new MainLayout(titleBar, sidebar);
+        mainLayout = new MainLayout(titleBar, sidebar, stage);
 
         chatListView = new ChatListView();
         chatListController = new ChatListController(chatListView, chatService, this);
@@ -191,9 +218,12 @@ public class MainController {
     }
 
     private void showWelcomeContent() {
-        VBox welcome = new VBox(10);
+        VBox welcome = new VBox(12);
         welcome.getStyleClass().add("welcome-content");
         welcome.setAlignment(Pos.CENTER);
+
+        Label glyph = new Label("\uD83D\uDCAC");
+        glyph.getStyleClass().add("welcome-glyph");
 
         Label title = new Label("Willkommen bei DevFlow");
         title.getStyleClass().add("welcome-title");
@@ -203,7 +233,7 @@ public class MainController {
         subtitle.setWrapText(true);
         subtitle.setMaxWidth(460);
 
-        welcome.getChildren().addAll(title, subtitle);
+        welcome.getChildren().addAll(glyph, title, subtitle);
         StackPane wrapper = new StackPane(welcome);
         wrapper.getStyleClass().add("content-area");
         mainLayout.setMainContent(wrapper);
@@ -236,6 +266,7 @@ public class MainController {
             ThemeManager.getInstance().unregisterScene(scene);
         }
         scene = new Scene(root, 1100, 740);
+        scene.setFill(Color.TRANSPARENT);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
         if (extraStylesheet != null) {
             scene.getStylesheets().add(getClass().getResource(extraStylesheet).toExternalForm());

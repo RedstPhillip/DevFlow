@@ -19,7 +19,7 @@ public class MainApp extends Application {
         loadFonts();
         ThemeManager.getInstance().applyInitial();
 
-        stage.initStyle(StageStyle.UNDECORATED);
+        stage.initStyle(StageStyle.TRANSPARENT);
         stage.setTitle("DevFlow " + AppConfig.APP_VERSION);
         stage.setMinWidth(900);
         stage.setMinHeight(600);

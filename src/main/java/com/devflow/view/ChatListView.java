@@ -27,6 +27,7 @@ public class ChatListView extends StackPane {
     private Consumer<Chat> onChatSelected;
     private long currentUserId;
     private String filterText = "";
+    private boolean suppressSelectionEvents = false;
 
     public ChatListView() {
         getStyleClass().add("chat-list-panel");
@@ -38,6 +39,7 @@ public class ChatListView extends StackPane {
         listView.setCellFactory(lv -> new ChatListCell());
 
         listView.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            if (suppressSelectionEvents) return;
             if (selected != null && onChatSelected != null) {
                 onChatSelected.accept(selected);
             }
@@ -56,14 +58,19 @@ public class ChatListView extends StackPane {
 
     public void setChats(List<Chat> chatList) {
         Chat selected = listView.getSelectionModel().getSelectedItem();
-        chats.setAll(chatList);
-        if (selected != null) {
-            for (Chat c : chatList) {
-                if (c.getId() == selected.getId()) {
-                    listView.getSelectionModel().select(c);
-                    break;
+        suppressSelectionEvents = true;
+        try {
+            chats.setAll(chatList);
+            if (selected != null) {
+                for (Chat c : chatList) {
+                    if (c.getId() == selected.getId()) {
+                        listView.getSelectionModel().select(c);
+                        break;
+                    }
                 }
             }
+        } finally {
+            suppressSelectionEvents = false;
         }
     }
 
