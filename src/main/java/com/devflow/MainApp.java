@@ -57,13 +57,12 @@ public class MainApp extends Application {
                 "/fonts/Roboto-Bold.ttf"
         };
         for (String path : fonts) {
-            try {
-                var url = getClass().getResource(path);
-                if (url == null) {
+            try (var in = getClass().getResourceAsStream(path)) {
+                if (in == null) {
                     System.err.println("Font resource not found: " + path);
                     continue;
                 }
-                Font f = Font.loadFont(url.toExternalForm(), 13);
+                Font f = Font.loadFont(in, 13);
                 if (f == null) {
                     System.err.println("Font.loadFont returned null for " + path);
                 } else {
