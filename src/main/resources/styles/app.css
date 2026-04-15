@@ -3,9 +3,10 @@
    ══════════════════════════════════════════════════════════════ */
 
 .root {
-    -fx-font-family: "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-family: "Roboto Medium", "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-smoothing-type: lcd;
     -fx-font-size: 13.5px;
+    -fx-font-weight: 500;
 
     -df-background: #0a0a0a;
     -df-foreground: #fafafa;
