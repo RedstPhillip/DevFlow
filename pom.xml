@@ -55,6 +55,10 @@
                 <configuration>
                     <mainClass>com.devflow.MainApp</mainClass>
                     <launcher>devflow</launcher>
+                    <options>
+                        <option>-Dprism.lcdtext=true</option>
+                        <option>-Dprism.subpixeltext=on</option>
+                    </options>
                 </configuration>
             </plugin>
             <plugin>

@@ -60,8 +60,15 @@ public class MainApp extends Application {
         for (String path : fonts) {
             try {
                 var url = getClass().getResource(path);
-                if (url != null) {
-                    Font.loadFont(url.toExternalForm(), 13);
+                if (url == null) {
+                    System.err.println("Font resource not found: " + path);
+                    continue;
+                }
+                Font f = Font.loadFont(url.toExternalForm(), 13);
+                if (f == null) {
+                    System.err.println("Font.loadFont returned null for " + path);
+                } else {
+                    System.out.println("Loaded font: " + f.getName() + " (family=" + f.getFamily() + ")");
                 }
             } catch (Exception e) {
                 System.err.println("Failed to load font " + path + ": " + e.getMessage());
