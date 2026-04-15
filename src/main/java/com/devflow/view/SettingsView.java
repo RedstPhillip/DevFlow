@@ -15,6 +15,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.ToggleSwitch;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class SettingsView extends ScrollPane {
 
     private final ToggleSwitch themeToggle;
@@ -23,6 +26,9 @@ public class SettingsView extends ScrollPane {
     private final Button clearPatButton;
     private final Button logoutButton;
     private final Label patStatus;
+
+    private final Map<String, javafx.scene.Node> sectionAnchors = new HashMap<>();
+    private final HBox wrapper;
 
     private Runnable onLogout;
     private Runnable onPatSaved;
@@ -41,6 +47,7 @@ public class SettingsView extends ScrollPane {
 
         // ── Appearance ──
         Label appearanceTitle = sectionTitle("ERSCHEINUNGSBILD");
+        sectionAnchors.put("appearance", appearanceTitle);
         VBox appearanceCard = new VBox(0);
         appearanceCard.getStyleClass().add("settings-card");
 
@@ -61,6 +68,7 @@ public class SettingsView extends ScrollPane {
 
         // ── GitHub ──
         Label githubTitle = sectionTitle("GITHUB INTEGRATION");
+        sectionAnchors.put("github", githubTitle);
         VBox githubCard = new VBox(14);
         githubCard.getStyleClass().add("settings-card");
 
@@ -109,6 +117,7 @@ public class SettingsView extends ScrollPane {
 
         // ── Account ──
         Label accountTitle = sectionTitle("ACCOUNT");
+        sectionAnchors.put("account", accountTitle);
         VBox accountCard = new VBox(14);
         accountCard.getStyleClass().add("settings-card");
 
@@ -127,6 +136,7 @@ public class SettingsView extends ScrollPane {
 
         // ── About ──
         Label aboutTitle = sectionTitle("ÜBER");
+        sectionAnchors.put("about", aboutTitle);
         VBox aboutCard = new VBox(6);
         aboutCard.getStyleClass().add("settings-card");
         Label version = new Label("DevFlow " + AppConfig.APP_VERSION);
@@ -143,10 +153,26 @@ public class SettingsView extends ScrollPane {
                 aboutTitle, aboutCard
         );
 
-        HBox wrapper = new HBox(root);
+        wrapper = new HBox(root);
         wrapper.setAlignment(Pos.TOP_CENTER);
         HBox.setHgrow(root, Priority.ALWAYS);
         setContent(wrapper);
+    }
+
+    public void scrollToSection(String key) {
+        javafx.scene.Node target = sectionAnchors.get(key);
+        if (target == null) return;
+        // Defer to next pulse so layout is up to date
+        javafx.application.Platform.runLater(() -> {
+            double contentHeight = wrapper.getBoundsInLocal().getHeight();
+            double viewportHeight = getViewportBounds().getHeight();
+            double maxScroll = contentHeight - viewportHeight;
+            if (maxScroll <= 0) { setVvalue(0); return; }
+            javafx.geometry.Bounds tgt = target.localToScene(target.getBoundsInLocal());
+            javafx.geometry.Bounds con = wrapper.localToScene(wrapper.getBoundsInLocal());
+            double yInContent = tgt.getMinY() - con.getMinY() - 16; // small offset
+            setVvalue(Math.min(1, Math.max(0, yInContent / maxScroll)));
+        });
     }
 
     private Label sectionTitle(String text) {

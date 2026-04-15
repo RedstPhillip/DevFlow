@@ -38,6 +38,7 @@ public class MainController {
     private LoginController loginController;
 
     private ChatListView chatListView;
+    private SettingsView settingsView;
 
     private final AuthService authService;
     private final UserService userService;
@@ -88,7 +89,6 @@ public class MainController {
         sidebar.setListNode(chatListView);
 
         sidebar.setOnChatsClick(() -> {
-            mainLayout.setSidebarListNode(chatListView);
             chatListController.startRefresh();
             showWelcomeContent();
         });
@@ -97,6 +97,9 @@ public class MainController {
         sidebar.setOnProfileClick(this::openProfileDialog);
         sidebar.setOnSearch(query -> {
             if (chatListView != null) chatListView.setFilter(query);
+        });
+        sidebar.setOnSettingsSection(sectionKey -> {
+            if (settingsView != null) settingsView.scrollToSection(sectionKey);
         });
 
         sidebar.setActive(Sidebar.RailKey.CHATS);
@@ -111,15 +114,22 @@ public class MainController {
         if (chatViewController != null) {
             chatViewController.stopPolling();
         }
-        SettingsView settings = new SettingsView();
-        settings.setOnLogout(this::logout);
-        mainLayout.setMainContent(settings);
+        if (settingsView == null) {
+            settingsView = new SettingsView();
+            settingsView.setOnLogout(this::logout);
+        }
+        mainLayout.getSidebar().setActive(Sidebar.RailKey.SETTINGS);
+        mainLayout.getSidebar().setActiveSettingsSection("appearance");
+        mainLayout.setMainContent(settingsView);
+        settingsView.scrollToSection("appearance");
     }
 
     public void openChat(Chat chat) {
         if (chatViewController != null) {
             chatViewController.stopPolling();
         }
+        // Make sure the rail/panel are in Chats mode (e.g. when opening a chat from Settings)
+        mainLayout.getSidebar().setActive(Sidebar.RailKey.CHATS);
         ChatView chatView = new ChatView();
         User currentUser = getCurrentUser();
         chatViewController = new ChatViewController(chatView, messageService, chat, currentUser);

@@ -32,17 +32,24 @@ public class Sidebar extends HBox {
     private final Label brand;
     private final Button newChatButton;
     private final TextField searchField;
+    private final VBox searchWrap;
     private final StackPane listHost;
     private final Avatar userAvatar;
     private final Label usernameLabel;
     private final Label statusLabel;
     private final Button userSettingsBtn;
 
+    // Settings-mode navigation (shown in panel when SETTINGS is active)
+    private final VBox settingsNav;
+    private Node chatListContent;
+
     private Runnable onChatsClick;
     private Runnable onSettingsClick;
     private Runnable onNewChat;
     private Runnable onProfileClick;
     private java.util.function.Consumer<String> onSearch;
+    private java.util.function.Consumer<String> onSettingsSection;
+    private String activeSettingsSection;
 
     public Sidebar() {
         getStyleClass().add("main-layout");
@@ -98,7 +105,7 @@ public class Sidebar extends HBox {
         searchField = new TextField();
         searchField.setPromptText("Chats durchsuchen…");
         searchField.getStyleClass().add("sidebar-search-field");
-        VBox searchWrap = new VBox(searchField);
+        searchWrap = new VBox(searchField);
         searchWrap.setPadding(new Insets(0, 12, 10, 12));
         searchField.textProperty().addListener((obs, old, val) -> {
             if (onSearch != null) onSearch.accept(val);
@@ -106,6 +113,17 @@ public class Sidebar extends HBox {
 
         listHost = new StackPane();
         VBox.setVgrow(listHost, Priority.ALWAYS);
+
+        // Settings navigation panel (hidden by default; shown in SETTINGS mode)
+        settingsNav = new VBox(2);
+        settingsNav.getStyleClass().add("settings-nav");
+        settingsNav.setPadding(new Insets(4, 8, 8, 8));
+        settingsNav.getChildren().addAll(
+                buildSettingsNavItem("appearance", "\uD83C\uDFA8", "Erscheinungsbild"),
+                buildSettingsNavItem("github", "\uD83D\uDD11", "GitHub Integration"),
+                buildSettingsNavItem("account", "\uD83D\uDC64", "Account"),
+                buildSettingsNavItem("about", "\u2139", "Über")
+        );
 
         userAvatar = new Avatar("?", 36);
         userAvatar.getStyleClass().add("avatar-clickable");
@@ -136,6 +154,59 @@ public class Sidebar extends HBox {
 
         setExpanded(true);
         updateActiveStyles();
+        applyPanelMode();
+    }
+
+    private Button buildSettingsNavItem(String key, String icon, String label) {
+        Button b = new Button();
+        b.getStyleClass().add("settings-nav-item");
+        Label iconLbl = new Label(icon);
+        iconLbl.getStyleClass().add("settings-nav-icon");
+        Label textLbl = new Label(label);
+        textLbl.getStyleClass().add("settings-nav-label");
+        HBox content = new HBox(12, iconLbl, textLbl);
+        content.setAlignment(Pos.CENTER_LEFT);
+        b.setGraphic(content);
+        b.setMaxWidth(Double.MAX_VALUE);
+        b.setFocusTraversable(false);
+        b.getProperties().put("key", key);
+        b.setOnAction(e -> {
+            activeSettingsSection = key;
+            updateSettingsNavStyles();
+            if (onSettingsSection != null) onSettingsSection.accept(key);
+        });
+        return b;
+    }
+
+    private void updateSettingsNavStyles() {
+        for (Node n : settingsNav.getChildren()) {
+            if (!(n instanceof Button b)) continue;
+            b.getStyleClass().remove("settings-nav-item-active");
+            Object k = b.getProperties().get("key");
+            if (k != null && k.equals(activeSettingsSection)) {
+                b.getStyleClass().add("settings-nav-item-active");
+            }
+        }
+    }
+
+    private void applyPanelMode() {
+        boolean isSettings = activeKey == RailKey.SETTINGS;
+        brand.setText(isSettings ? "Einstellungen" : "Chats");
+        newChatButton.setVisible(!isSettings);
+        newChatButton.setManaged(!isSettings);
+        searchWrap.setVisible(!isSettings);
+        searchWrap.setManaged(!isSettings);
+        userSettingsBtn.setVisible(!isSettings);
+        userSettingsBtn.setManaged(!isSettings);
+        if (isSettings) {
+            if (activeSettingsSection == null) activeSettingsSection = "appearance";
+            updateSettingsNavStyles();
+            listHost.getChildren().setAll(settingsNav);
+        } else if (chatListContent != null) {
+            listHost.getChildren().setAll(chatListContent);
+        } else {
+            listHost.getChildren().clear();
+        }
     }
 
     private Button buildRailItem(String icon, String label) {
@@ -158,6 +229,7 @@ public class Sidebar extends HBox {
     private void activate(RailKey key) {
         this.activeKey = key;
         updateActiveStyles();
+        applyPanelMode();
         if (key == RailKey.CHATS && onChatsClick != null) onChatsClick.run();
         if (key == RailKey.SETTINGS && onSettingsClick != null) onSettingsClick.run();
     }
@@ -188,10 +260,19 @@ public class Sidebar extends HBox {
     public void setActive(RailKey key) {
         this.activeKey = key;
         updateActiveStyles();
+        applyPanelMode();
     }
 
     public void setListNode(Node node) {
-        listHost.getChildren().setAll(node);
+        this.chatListContent = node;
+        if (activeKey != RailKey.SETTINGS) {
+            listHost.getChildren().setAll(node);
+        }
+    }
+
+    public void setActiveSettingsSection(String key) {
+        this.activeSettingsSection = key;
+        updateSettingsNavStyles();
     }
 
     public void setBrand(String text) { brand.setText(text); }
@@ -213,4 +294,5 @@ public class Sidebar extends HBox {
     public void setOnNewChat(Runnable r) { this.onNewChat = r; }
     public void setOnProfileClick(Runnable r) { this.onProfileClick = r; }
     public void setOnSearch(java.util.function.Consumer<String> c) { this.onSearch = c; }
+    public void setOnSettingsSection(java.util.function.Consumer<String> c) { this.onSettingsSection = c; }
 }
