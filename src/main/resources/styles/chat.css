@@ -22,7 +22,7 @@
 .chat-header-status-online {
     -fx-font-size: 11px;
     -fx-text-fill: -df-online;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 
 .chat-header-btn {
@@ -116,7 +116,7 @@
     -fx-border-color: transparent;
     -fx-padding: 8 18;
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-cursor: hand;
 }
 .chat-send-btn:hover { -fx-background-color: -df-primary-hover; }

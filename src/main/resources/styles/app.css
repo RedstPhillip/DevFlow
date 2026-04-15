@@ -3,9 +3,9 @@
    ══════════════════════════════════════════════════════════════ */
 
 .root {
-    -fx-font-family: "Roboto Medium", "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-family: "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-smoothing-type: lcd;
-    -fx-font-size: 13.5px;
+    -fx-font-size: 14px;
     -fx-font-weight: 500;
 
     -df-background: #0a0a0a;
@@ -123,7 +123,7 @@
 .button-primary {
     -fx-background-color: -df-primary;
     -fx-text-fill: -df-primary-foreground;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-border-color: transparent;
 }
 .button-primary:hover { -fx-background-color: -df-primary-hover; }
@@ -140,7 +140,7 @@
     -fx-background-color: transparent;
     -fx-text-fill: -df-destructive;
     -fx-border-color: -df-destructive;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 .button-destructive:hover {
     -fx-background-color: -df-destructive;
@@ -251,7 +251,7 @@
 .rail-item-active {
     -fx-background-color: -df-accent;
     -fx-text-fill: -df-foreground;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 
 .rail-icon {
@@ -292,7 +292,7 @@
 
 .sidebar-brand {
     -fx-font-size: 16px;
-    -fx-font-weight: 800;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 
@@ -334,7 +334,7 @@
 
 .sidebar-username {
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 
@@ -396,7 +396,7 @@
 
 .chat-cell-name {
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 .chat-cell-preview {
@@ -433,7 +433,7 @@
     -fx-border-radius: 6;
     -fx-background-radius: 6;
     -fx-font-size: 11px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-padding: 4 12;
     -fx-cursor: hand;
 }
@@ -448,7 +448,7 @@
 .welcome-content { -fx-alignment: center; }
 .welcome-title {
     -fx-font-size: 28px;
-    -fx-font-weight: 800;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 .welcome-subtitle {
@@ -461,7 +461,7 @@
 .settings-view { -fx-background-color: -df-background; }
 .settings-header {
     -fx-font-size: 22px;
-    -fx-font-weight: 800;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 .settings-section-title {
@@ -478,7 +478,7 @@
 }
 .settings-label {
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 .settings-description {
@@ -529,7 +529,7 @@
 
 .modal-title {
     -fx-font-size: 18px;
-    -fx-font-weight: 800;
+    -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 
@@ -562,7 +562,7 @@
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
     -fx-padding: 10 14;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
@@ -582,7 +582,7 @@
     -fx-background-radius: 999;
     -fx-padding: 4 10;
     -fx-font-size: 11px;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 .chip-close {
     -fx-background-color: transparent;
