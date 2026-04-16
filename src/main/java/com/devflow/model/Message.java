@@ -1,13 +1,22 @@
 package com.devflow.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.time.LocalDateTime;
 
 public class Message {
 
     private long id;
+
+    @SerializedName(value = "chatId", alternate = {"chat_id"})
     private long chatId;
+
+    @SerializedName(value = "transmitterId", alternate = {"transmitter_id", "senderId", "sender_id"})
     private long transmitterId;
+
     private String content;
+
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private LocalDateTime createdAt;
 
     public Message() {}

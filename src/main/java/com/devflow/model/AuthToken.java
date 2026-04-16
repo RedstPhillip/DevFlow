@@ -1,10 +1,18 @@
 package com.devflow.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public class AuthToken {
 
+    @SerializedName(value = "accessToken", alternate = {"access_token"})
     private String accessToken;
+
+    @SerializedName(value = "refreshToken", alternate = {"refresh_token"})
     private String refreshToken;
+
+    @SerializedName(value = "expiresAt", alternate = {"expires_at"})
     private String expiresAt;
+
     private User user;
 
     public AuthToken() {}

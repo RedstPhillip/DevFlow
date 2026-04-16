@@ -1,5 +1,7 @@
 package com.devflow.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,10 +16,19 @@ public class Chat {
     private long id;
     private String type;
     private String name;
+
+    @SerializedName(value = "ownerId", alternate = {"owner_id"})
     private Long ownerId;
+
+    @SerializedName(value = "memberAddPolicy", alternate = {"member_add_policy"})
     private String memberAddPolicy;
+
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private LocalDateTime createdAt;
+
     private List<User> participants;
+
+    @SerializedName(value = "lastMessage", alternate = {"last_message"})
     private Message lastMessage;
 
     public Chat() {}

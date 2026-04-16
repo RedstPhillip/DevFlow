@@ -1,13 +1,20 @@
 package com.devflow.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.time.LocalDateTime;
 
 public class User {
 
     private long id;
     private String username;
+
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private LocalDateTime createdAt;
+
     private boolean online;
+
+    @SerializedName(value = "avatarUrl", alternate = {"avatar_url"})
     private String avatarUrl;
 
     public User() {}
