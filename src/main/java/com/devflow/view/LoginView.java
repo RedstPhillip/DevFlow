@@ -71,6 +71,9 @@ public class LoginView extends StackPane {
         setAlignment(Pos.CENTER);
         setPadding(new Insets(24));
         getChildren().add(card);
+
+        // Focus username on first paint so the user can start typing immediately.
+        javafx.application.Platform.runLater(usernameField::requestFocus);
     }
 
     public TextField getUsernameField() { return usernameField; }

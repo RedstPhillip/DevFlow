@@ -21,6 +21,14 @@ public class LoginController {
         view.getLoginButton().setOnAction(e -> handleLogin());
         view.getRegisterButton().setOnAction(e -> handleRegister());
 
+        // Enter on either field submits — focus password from username for keyboard-driven login.
+        view.getUsernameField().setOnAction(e -> {
+            if (view.getPasswordField().getText().isEmpty()) {
+                view.getPasswordField().requestFocus();
+            } else {
+                handleLogin();
+            }
+        });
         view.getPasswordField().setOnAction(e -> handleLogin());
     }
 

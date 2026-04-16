@@ -4,6 +4,7 @@ import com.devflow.model.Chat;
 import com.devflow.model.User;
 import com.devflow.service.ChatService;
 import com.devflow.service.UserService;
+import com.devflow.util.Debouncer;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -35,6 +36,8 @@ public class GroupSettingsDialog extends VBox {
     private final UserService userService;
     private final long currentUserId;
     private final Consumer<Chat> onChanged;
+    private final StackPane host;
+    private final Node blurTarget;
 
     private Chat chat;
     private final TextField nameField;
@@ -54,6 +57,8 @@ public class GroupSettingsDialog extends VBox {
         this.chat = chat;
         this.currentUserId = currentUserId;
         this.onChanged = onChanged;
+        this.host = host;
+        this.blurTarget = blurTarget;
 
         getStyleClass().add("modal-card");
         setMaxWidth(520);
@@ -113,7 +118,7 @@ public class GroupSettingsDialog extends VBox {
 
         leaveBtn = new Button(isOwner ? "Gruppe auflösen" : "Gruppe verlassen");
         leaveBtn.getStyleClass().add("button-destructive");
-        leaveBtn.setOnAction(e -> leave());
+        leaveBtn.setOnAction(e -> confirmLeave(isOwner));
 
         statusLabel = new Label("");
         statusLabel.getStyleClass().add("modal-subtitle");
@@ -151,6 +156,15 @@ public class GroupSettingsDialog extends VBox {
                     });
                     return null;
                 });
+    }
+
+    private void confirmLeave(boolean isOwner) {
+        String title = isOwner ? "Gruppe auflösen?" : "Gruppe verlassen?";
+        String msg = isOwner
+                ? "Diese Aktion löscht die Gruppe für alle Mitglieder. Sie kann nicht rückgängig gemacht werden."
+                : "Du verlierst den Zugriff auf bisherige Nachrichten dieser Gruppe.";
+        String ok = isOwner ? "Auflösen" : "Verlassen";
+        new ConfirmDialog(host, blurTarget, title, msg, ok, true, this::leave).show();
     }
 
     private void leave() {
@@ -303,7 +317,8 @@ public class GroupSettingsDialog extends VBox {
                     items.setAll(filtered);
                 }, Platform::runLater).exceptionally(ex -> null);
             };
-            search.textProperty().addListener((o, a, b) -> load.run());
+            Debouncer debouncer = new Debouncer(280);
+            search.textProperty().addListener((o, a, b) -> debouncer.schedule(load));
             load.run();
         }
         void show() { pickerOverlay.show(); }

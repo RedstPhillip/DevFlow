@@ -15,35 +15,35 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 public class MessageBubble extends HBox {
+
+    private static final double MAX_BUBBLE_WIDTH = 460;
 
     public MessageBubble(Message message, boolean isOwn, User sender, boolean showSender) {
         setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         setPadding(new Insets(3, 14, 3, 14));
 
-        Label content = new Label(message.getContent());
-        content.setWrapText(true);
-        content.setMaxWidth(440);
+        // TextFlow + Text wraps mid-word for unbreakable strings (long URLs, code), where Label would clip.
+        Text text = new Text(message.getContent() == null ? "" : message.getContent());
+        text.getStyleClass().add(isOwn ? "bubble-own-text" : "bubble-other-text");
 
-        VBox bubble = new VBox(content);
-        bubble.setPadding(new Insets(8, 12, 8, 12));
-        bubble.setMaxWidth(440);
+        TextFlow flow = new TextFlow(text);
+        flow.setMaxWidth(MAX_BUBBLE_WIDTH);
+        flow.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        if (isOwn) {
-            bubble.getStyleClass().add("bubble-own");
-            content.getStyleClass().add("bubble-own-text");
-        } else {
-            bubble.getStyleClass().add("bubble-other");
-            content.getStyleClass().add("bubble-other-text");
-        }
+        VBox bubble = new VBox(flow);
+        bubble.setMaxWidth(MAX_BUBBLE_WIDTH);
+        bubble.getStyleClass().add(isOwn ? "bubble-own" : "bubble-other");
 
-        // Time label outside the bubble
         Label time = new Label(DateFormatter.formatTime(message.getCreatedAt()));
         time.getStyleClass().add("bubble-time");
 
         VBox column = new VBox(2);
         column.setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        column.setMaxWidth(MAX_BUBBLE_WIDTH);
 
         if (showSender && !isOwn && sender != null) {
             Label senderLabel = new Label(sender.getUsername());
@@ -53,13 +53,13 @@ public class MessageBubble extends HBox {
 
         column.getChildren().addAll(bubble, time);
 
-        // Context menu
+        // Context menu — copy / show full timestamp
         ContextMenu menu = new ContextMenu();
         MenuItem copy = new MenuItem("Kopieren");
         copy.setOnAction(e -> {
             Clipboard cb = Clipboard.getSystemClipboard();
             ClipboardContent c = new ClipboardContent();
-            c.putString(message.getContent());
+            c.putString(message.getContent() == null ? "" : message.getContent());
             cb.setContent(c);
         });
         MenuItem info = new MenuItem("Zeitstempel: " + DateFormatter.formatFull(message.getCreatedAt()));

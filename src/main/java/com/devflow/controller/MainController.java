@@ -41,6 +41,9 @@ public class MainController {
     private ChatListView chatListView;
     private SettingsView settingsView;
 
+    /** Held reference so we can remove it on the next login/logout cycle and avoid leak accumulation. */
+    private javafx.beans.value.ChangeListener<Number> loginMaximizeListener;
+
     private final AuthService authService;
     private final UserService userService;
     private final ChatService chatService;
@@ -80,6 +83,8 @@ public class MainController {
     }
 
     private void attachLoginMaximizeListener(StackPane outer, VBox frame) {
+        // Detach any previous instance — without this, every login/logout cycle leaks four listeners on stage.
+        detachLoginMaximizeListener();
         javafx.beans.value.ChangeListener<Number> listener = (obs, o, n) -> {
             var bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
             boolean maximized = Math.abs(stage.getWidth() - bounds.getWidth()) < 2
@@ -94,6 +99,7 @@ public class MainController {
                 frame.getStyleClass().remove("maximized");
             }
         };
+        loginMaximizeListener = listener;
         stage.xProperty().addListener(listener);
         stage.yProperty().addListener(listener);
         stage.widthProperty().addListener(listener);
@@ -101,8 +107,18 @@ public class MainController {
         Platform.runLater(() -> listener.changed(null, 0, 0));
     }
 
+    private void detachLoginMaximizeListener() {
+        if (loginMaximizeListener == null) return;
+        stage.xProperty().removeListener(loginMaximizeListener);
+        stage.yProperty().removeListener(loginMaximizeListener);
+        stage.widthProperty().removeListener(loginMaximizeListener);
+        stage.heightProperty().removeListener(loginMaximizeListener);
+        loginMaximizeListener = null;
+    }
+
     public void showMainLayout() {
         stopAllPolling();
+        detachLoginMaximizeListener();
 
         CustomTitleBar titleBar = new CustomTitleBar(stage, "DevFlow");
 
@@ -139,7 +155,7 @@ public class MainController {
 
     public void showSettings() {
         if (chatViewController != null) {
-            chatViewController.stopPolling();
+            chatViewController.dispose();
             chatViewController = null;
         }
         if (chatListView != null) chatListView.clearSelection();
@@ -155,7 +171,8 @@ public class MainController {
 
     public void openChat(Chat chat) {
         if (chatViewController != null) {
-            chatViewController.stopPolling();
+            chatViewController.dispose();
+            chatViewController = null;
         }
         // Make sure the rail/panel are in Chats mode (e.g. when opening a chat from Settings)
         mainLayout.getSidebar().setActive(Sidebar.RailKey.CHATS);
@@ -221,7 +238,7 @@ public class MainController {
 
     private void showWelcomeContent() {
         if (chatViewController != null) {
-            chatViewController.stopPolling();
+            chatViewController.dispose();
             chatViewController = null;
         }
         if (chatListView != null) chatListView.clearSelection();
@@ -263,7 +280,7 @@ public class MainController {
             chatListController.stopRefresh();
         }
         if (chatViewController != null) {
-            chatViewController.stopPolling();
+            chatViewController.dispose();
             chatViewController = null;
         }
     }

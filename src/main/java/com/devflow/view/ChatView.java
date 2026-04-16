@@ -63,7 +63,15 @@ public class ChatView extends VBox {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        messagesBox.heightProperty().addListener((obs, old, val) -> scrollPane.setVvalue(1.0));
+        // Smart auto-scroll: only follow new content if the user is already near the bottom.
+        // This preserves the user's reading position when scrolling back through history.
+        messagesBox.heightProperty().addListener((obs, oldH, newH) -> {
+            double v = scrollPane.getVvalue();
+            // Treat "near the bottom" as v >= 0.92, OR the very first paint (oldH ~= 0).
+            if (oldH == null || oldH.doubleValue() < 1 || v >= 0.92) {
+                scrollPane.setVvalue(1.0);
+            }
+        });
 
         inputField = new TextField();
         inputField.setPromptText("Nachricht schreiben…");
@@ -79,6 +87,12 @@ public class ChatView extends VBox {
         inputBar.setPadding(new Insets(12, 16, 12, 16));
 
         getChildren().addAll(header, scrollPane, inputBar);
+    }
+
+    /** Force-scroll to the newest message. Use after sending an own message. */
+    public void scrollToBottom() {
+        // Defer one frame so newly-added bubbles have been laid out.
+        javafx.application.Platform.runLater(() -> scrollPane.setVvalue(1.0));
     }
 
     public StackPane getAvatarHost() { return avatarHost; }

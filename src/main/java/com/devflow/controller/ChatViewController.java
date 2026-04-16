@@ -13,9 +13,6 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.util.Duration;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ChatViewController {
 
     private final ChatView view;
@@ -25,6 +22,8 @@ public class ChatViewController {
     private Timeline pollingTimeline;
     private long lastMessageId = 0;
     private Runnable onOpenGroupSettings;
+    /** True between construction and dispose(); guards async callbacks against a detached view. */
+    private volatile boolean active = true;
 
     public ChatViewController(ChatView view, MessageService messageService, Chat chat, User currentUser) {
         this.view = view;
@@ -86,13 +85,17 @@ public class ChatViewController {
 
         messageService.sendMessage(chat.getId(), content)
                 .thenAcceptAsync(message -> {
+                    if (!active) return;
                     appendMessage(message);
                     lastMessageId = message.getId();
                     view.getSendButton().setDisable(false);
                     view.getInputField().requestFocus();
+                    // Always jump to bottom after sending — the user just typed it, they want to see it land.
+                    view.scrollToBottom();
                 }, Platform::runLater)
                 .exceptionally(ex -> {
                     Platform.runLater(() -> {
+                        if (!active) return;
                         view.getSendButton().setDisable(false);
                         System.err.println("Failed to send message: " + ex.getMessage());
                     });
@@ -103,6 +106,7 @@ public class ChatViewController {
     private void loadMessages() {
         messageService.getMessages(chat.getId(), null)
                 .thenAcceptAsync(messages -> {
+                    if (!active) return;
                     view.getMessagesBox().getChildren().clear();
                     long previousSender = -1;
                     for (Message msg : messages) {
@@ -125,6 +129,7 @@ public class ChatViewController {
         Long afterId = lastMessageId > 0 ? lastMessageId : null;
         messageService.getMessages(chat.getId(), afterId)
                 .thenAcceptAsync(messages -> {
+                    if (!active) return;
                     if (!messages.isEmpty()) {
                         for (Message msg : messages) {
                             appendMessage(msg);
@@ -159,6 +164,7 @@ public class ChatViewController {
 
     public void startPolling() {
         stopPolling();
+        if (!active) return;
         pollingTimeline = new Timeline(
                 new KeyFrame(Duration.millis(AppConfig.POLL_INTERVAL_MS), e -> pollNewMessages())
         );
@@ -171,5 +177,15 @@ public class ChatViewController {
             pollingTimeline.stop();
             pollingTimeline = null;
         }
+    }
+
+    /**
+     * Called by MainController when this view is being torn down. After this,
+     * any in-flight async callback will be a no-op so it can't mutate the
+     * (potentially detached) view or fire ghost selections.
+     */
+    public void dispose() {
+        active = false;
+        stopPolling();
     }
 }

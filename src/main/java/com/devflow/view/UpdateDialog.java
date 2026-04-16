@@ -10,8 +10,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -26,15 +30,24 @@ public class UpdateDialog extends Stage {
     public UpdateDialog(Stage owner, UpdateService.UpdateInfo info, UpdateService updateService) {
         initModality(Modality.APPLICATION_MODAL);
         initOwner(owner);
-        initStyle(StageStyle.UNDECORATED);
+        initStyle(StageStyle.TRANSPARENT);
 
         VBox root = new VBox(14);
         root.getStyleClass().add("update-dialog");
         root.setPadding(new Insets(24));
         root.setMaxWidth(480);
 
-        Label title = new Label("Update verfuegbar");
+        Label title = new Label("Update verfügbar");
         title.getStyleClass().add("section-title");
+
+        Button closeBtn = new Button("\u2715");
+        closeBtn.getStyleClass().add("modal-close-btn");
+        closeBtn.setOnAction(e -> close());
+
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        HBox header = new HBox(8, title, headerSpacer, closeBtn);
+        header.setAlignment(Pos.CENTER_LEFT);
 
         Label versionLabel = new Label("Aktuelle Version: " + AppConfig.APP_VERSION
                 + "  \u2192  Neue Version: " + info.version);
@@ -63,22 +76,23 @@ public class UpdateDialog extends Stage {
             statusLabel.setVisible(true);
         }
 
-        skipButton = new Button("Ueberspringen");
+        skipButton = new Button("Überspringen");
         skipButton.getStyleClass().add("button-secondary");
         skipButton.setOnAction(e -> close());
 
         updateButton.setOnAction(e -> {
             updateButton.setDisable(true);
             skipButton.setDisable(true);
+            closeBtn.setDisable(true);
             progressBar.setVisible(true);
             progressBar.setManaged(true);
             progressBar.setProgress(-1);
-            statusLabel.setText("Downloading...");
+            statusLabel.setText("Download läuft …");
             statusLabel.setVisible(true);
 
             updateService.downloadUpdate(info.downloadUrl)
                     .thenAcceptAsync(jarPath -> {
-                        statusLabel.setText("Update wird angewendet...");
+                        statusLabel.setText("Update wird angewendet …");
                         try {
                             updateService.applyUpdate(jarPath);
                             Platform.exit();
@@ -87,6 +101,7 @@ public class UpdateDialog extends Stage {
                             statusLabel.setText("Update fehlgeschlagen: " + ex.getMessage());
                             updateButton.setDisable(false);
                             skipButton.setDisable(false);
+                            closeBtn.setDisable(false);
                         }
                     }, Platform::runLater)
                     .exceptionally(ex -> {
@@ -96,18 +111,26 @@ public class UpdateDialog extends Stage {
                             progressBar.setManaged(false);
                             updateButton.setDisable(false);
                             skipButton.setDisable(false);
+                            closeBtn.setDisable(false);
                         });
                         return null;
                     });
         });
 
-        HBox buttons = new HBox(10, updateButton, skipButton);
-        buttons.setAlignment(Pos.CENTER_RIGHT);
+        Region btnSpacer = new Region();
+        HBox.setHgrow(btnSpacer, Priority.ALWAYS);
+        HBox buttons = new HBox(10, statusLabel, btnSpacer, skipButton, updateButton);
+        buttons.setAlignment(Pos.CENTER_LEFT);
 
-        root.getChildren().addAll(title, versionLabel, notes, progressBar, statusLabel, buttons);
+        root.getChildren().addAll(header, versionLabel, notes, progressBar, buttons);
 
         Scene scene = new Scene(root);
+        scene.setFill(Color.TRANSPARENT);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
+        // ESC closes when the update isn't actively downloading.
+        scene.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ESCAPE && !updateButton.isDisabled()) close();
+        });
         setScene(scene);
         setTitle("DevFlow Update");
     }

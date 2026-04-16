@@ -28,6 +28,7 @@ public class ChatListView extends StackPane {
     private long currentUserId;
     private String filterText = "";
     private boolean suppressSelectionEvents = false;
+    private boolean loaded = false;
 
     public ChatListView() {
         getStyleClass().add("chat-list-panel");
@@ -45,7 +46,8 @@ public class ChatListView extends StackPane {
             }
         });
 
-        emptyLabel = new Label("Noch keine Unterhaltungen");
+        // Starts as a loading hint and switches to the empty-state copy after the first response.
+        emptyLabel = new Label("Lade Unterhaltungen …");
         emptyLabel.getStyleClass().add("empty-state-text");
         StackPane emptyState = new StackPane(emptyLabel);
         emptyState.getStyleClass().add("empty-state");
@@ -72,6 +74,16 @@ public class ChatListView extends StackPane {
         } finally {
             suppressSelectionEvents = false;
         }
+        if (!loaded) {
+            loaded = true;
+            emptyLabel.setText(filterText.isEmpty()
+                    ? "Noch keine Unterhaltungen.\nKlicke + um eine neue zu starten."
+                    : "Keine Treffer.");
+        } else {
+            emptyLabel.setText(filterText.isEmpty()
+                    ? "Noch keine Unterhaltungen.\nKlicke + um eine neue zu starten."
+                    : "Keine Treffer.");
+        }
     }
 
     public void clearSelection() {
@@ -91,6 +103,11 @@ public class ChatListView extends StackPane {
             filtered.setPredicate(c ->
                     c.getDisplayName(currentUserId).toLowerCase().contains(filterText));
         }
+        if (loaded) {
+            emptyLabel.setText(filterText.isEmpty()
+                    ? "Noch keine Unterhaltungen.\nKlicke + um eine neue zu starten."
+                    : "Keine Treffer.");
+        }
     }
 
     public void setOnChatSelected(Consumer<Chat> handler) {
@@ -99,6 +116,17 @@ public class ChatListView extends StackPane {
 
     public void setCurrentUserId(long userId) {
         this.currentUserId = userId;
+    }
+
+    /** Truncate at the last whitespace boundary inside maxLen so we never split words mid-character. */
+    private static String truncatePreview(String text, int maxLen) {
+        if (text == null) return "";
+        // Collapse newlines so the single-line preview reads cleanly.
+        String flat = text.replaceAll("\\s+", " ").trim();
+        if (flat.length() <= maxLen) return flat;
+        int cut = flat.lastIndexOf(' ', maxLen);
+        if (cut < maxLen / 2) cut = maxLen; // very long word — fall back to hard cut
+        return flat.substring(0, cut) + "\u2026";
     }
 
     private class ChatListCell extends ListCell<Chat> {
@@ -121,9 +149,7 @@ public class ChatListView extends StackPane {
             Label previewLabel = new Label();
             previewLabel.getStyleClass().add("chat-cell-preview");
             if (chat.getLastMessage() != null) {
-                String preview = chat.getLastMessage().getContent();
-                if (preview.length() > 42) preview = preview.substring(0, 42) + "\u2026";
-                previewLabel.setText(preview);
+                previewLabel.setText(truncatePreview(chat.getLastMessage().getContent(), 42));
             } else {
                 previewLabel.setText("Noch keine Nachrichten");
             }

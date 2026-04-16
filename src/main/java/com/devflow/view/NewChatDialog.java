@@ -4,6 +4,7 @@ import com.devflow.model.Chat;
 import com.devflow.model.User;
 import com.devflow.service.ChatService;
 import com.devflow.service.UserService;
+import com.devflow.util.Debouncer;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -131,7 +132,9 @@ public class NewChatDialog extends VBox {
 
         // ── Events ──
         closeBtn.setOnAction(e -> overlay.close());
-        searchField.textProperty().addListener((obs, old, val) -> loadUsers(val));
+        Debouncer searchDebouncer = new Debouncer(280);
+        searchField.textProperty().addListener((obs, old, val) ->
+                searchDebouncer.schedule(() -> loadUsers(val)));
 
         primaryButton.setOnAction(e -> submit());
         groupNameField.textProperty().addListener((obs, old, val) -> updatePrimary());

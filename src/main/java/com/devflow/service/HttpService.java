@@ -8,17 +8,22 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HttpService {
 
     private static final HttpService INSTANCE = new HttpService();
     private final HttpClient client;
-    private boolean retrying = false;
+    // Per-request retry guard could leak across concurrent calls when stored on the singleton.
+    // Use an AtomicBoolean so token refresh races never trigger more than one refresh attempt.
+    private final AtomicBoolean refreshing = new AtomicBoolean(false);
 
     private HttpService() {
         client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(15))
                 .build();
     }
 
@@ -71,7 +76,7 @@ public class HttpService {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        return safeSend(request);
     }
 
     private void addAuthHeader(HttpRequest.Builder builder) {
@@ -82,21 +87,32 @@ public class HttpService {
     }
 
     private CompletableFuture<HttpResponse<String>> sendWithRetry(HttpRequest request) {
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return safeSend(request)
                 .thenCompose(response -> {
-                    if (response.statusCode() == 401 && !retrying && TokenStore.getInstance().hasAuthToken()) {
-                        retrying = true;
-                        return tryRefreshAndRetry(request);
+                    if (response.statusCode() == 401 && TokenStore.getInstance().hasAuthToken()) {
+                        if (refreshing.compareAndSet(false, true)) {
+                            return tryRefreshAndRetry(request);
+                        }
+                        // A refresh is already in flight from another request; just bubble the 401
+                        // so the caller can decide what to do. The retry loop will recover on next call.
                     }
-                    retrying = false;
                     return CompletableFuture.completedFuture(response);
                 });
+    }
+
+    /** Wraps sendAsync so caller chains see network failures as a failed future, never an unchecked throw. */
+    private CompletableFuture<HttpResponse<String>> safeSend(HttpRequest request) {
+        try {
+            return client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Throwable t) {
+            return CompletableFuture.failedFuture(t);
+        }
     }
 
     private CompletableFuture<HttpResponse<String>> tryRefreshAndRetry(HttpRequest originalRequest) {
         String refreshToken = TokenStore.getInstance().getAuthToken().getRefreshToken();
         if (refreshToken == null) {
-            retrying = false;
+            refreshing.set(false);
             TokenStore.getInstance().clearAuthToken();
             return CompletableFuture.failedFuture(new RuntimeException("No refresh token"));
         }
@@ -111,9 +127,9 @@ public class HttpService {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
-        return client.sendAsync(refreshRequest, HttpResponse.BodyHandlers.ofString())
+        return safeSend(refreshRequest)
+                .whenComplete((r, t) -> refreshing.set(false))
                 .thenCompose(refreshResponse -> {
-                    retrying = false;
                     if (refreshResponse.statusCode() == 200) {
                         var newToken = JsonUtil.fromJson(refreshResponse.body(),
                                 com.devflow.model.AuthToken.class);
@@ -130,7 +146,7 @@ public class HttpService {
                                     originalRequest.bodyPublisher().orElse(HttpRequest.BodyPublishers.noBody()));
                         }
 
-                        return client.sendAsync(retryBuilder.build(), HttpResponse.BodyHandlers.ofString());
+                        return safeSend(retryBuilder.build());
                     } else {
                         TokenStore.getInstance().clearAuthToken();
                         return CompletableFuture.failedFuture(

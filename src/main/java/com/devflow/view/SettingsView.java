@@ -81,10 +81,9 @@ public class SettingsView extends ScrollPane {
 
         patField = new PasswordField();
         patField.setPromptText("ghp_...");
-        String existing = TokenStore.getInstance().getGithubPat();
-        if (existing != null && !existing.isBlank()) {
-            patField.setText(existing);
-        }
+        // SECURITY: never pre-fill the field with the stored token. Showing it (even masked)
+        // hands the secret to any over-the-shoulder observer the moment they reveal the field
+        // via DevTools / accessibility. Render a status row instead.
 
         savePatButton = new Button("Speichern");
         savePatButton.getStyleClass().add("button-primary");
@@ -93,6 +92,7 @@ public class SettingsView extends ScrollPane {
 
         patStatus = new Label();
         patStatus.getStyleClass().add("settings-description");
+        refreshPatStatus();
 
         HBox patButtons = new HBox(10, savePatButton, clearPatButton);
 
@@ -103,6 +103,8 @@ public class SettingsView extends ScrollPane {
                 return;
             }
             TokenStore.getInstance().setGithubPat(val.trim());
+            patField.clear();
+            refreshPatStatus();
             patStatus.setText("Token gespeichert.");
             if (onPatSaved != null) onPatSaved.run();
         });
@@ -110,6 +112,7 @@ public class SettingsView extends ScrollPane {
         clearPatButton.setOnAction(e -> {
             TokenStore.getInstance().setGithubPat("");
             patField.clear();
+            refreshPatStatus();
             patStatus.setText("Token entfernt.");
         });
 
@@ -173,6 +176,21 @@ public class SettingsView extends ScrollPane {
             double yInContent = tgt.getMinY() - con.getMinY() - 16; // small offset
             setVvalue(Math.min(1, Math.max(0, yInContent / maxScroll)));
         });
+    }
+
+    private void refreshPatStatus() {
+        String existing = TokenStore.getInstance().getGithubPat();
+        if (existing != null && !existing.isBlank()) {
+            // Show only the token's prefix + suffix as a fingerprint, never the secret itself.
+            String hint = existing.length() > 8
+                    ? existing.substring(0, 4) + "…" + existing.substring(existing.length() - 4)
+                    : "••••";
+            patStatus.setText("Aktueller Token: " + hint);
+            patField.setPromptText("Neuen Token eingeben, um zu ersetzen");
+        } else {
+            patStatus.setText("Kein Token gespeichert.");
+            patField.setPromptText("ghp_…");
+        }
     }
 
     private Label sectionTitle(String text) {
