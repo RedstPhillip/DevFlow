@@ -1,2 +1,7 @@
 .idea/
 target/
+bin/
+.vscode/
+.classpath
+.project
+.settings/
