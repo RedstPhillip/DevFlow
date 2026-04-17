@@ -615,14 +615,73 @@
     -fx-border-color: -df-primary;
 }
 
+/* ── Chat list sections (VS Code folder-style) ── */
+
+.chat-list-panel,
+.chat-list-scroll,
+.chat-list-scroll > .viewport,
+.chat-list-content {
+    -fx-background-color: -df-sidebar;
+}
+.chat-list-section-header {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+.chat-list-section-header:hover { -fx-background-color: -df-rail-hover; }
+.chat-list-section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -df-muted-foreground;
+    /* Uppercase look without CSS text-transform (not supported in JavaFX CSS). */
+}
+.chat-list-section-chevron {
+    -fx-font-size: 9px;
+    -fx-text-fill: -df-muted-foreground;
+}
+.chat-list-section-count {
+    -fx-font-size: 10px;
+    -fx-text-fill: -df-muted-foreground;
+    -fx-background-color: -df-accent;
+    -fx-background-radius: 999;
+    -fx-padding: 1 7;
+}
+.chat-list-inner { -fx-padding: 0; }
+
+/* ── Workspace switcher (sidebar header) ── */
+
+.workspace-switcher {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-sidebar-border;
+    -fx-border-width: 0 0 1 0;
+    -fx-cursor: hand;
+}
+.workspace-switcher:hover { -fx-background-color: -df-rail-hover; }
+.workspace-switcher-icon {
+    -fx-font-size: 12px;
+    -fx-text-fill: -df-primary;
+}
+.workspace-switcher-name {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -df-foreground;
+}
+.workspace-switcher-chevron {
+    -fx-font-size: 9px;
+    -fx-text-fill: -df-muted-foreground;
+}
+
 /* ── Welcome ── */
 
 .welcome-content { -fx-alignment: center; }
-.welcome-glyph {
-    -fx-font-size: 56px;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-opacity: 0.42;
-    -fx-padding: 0 0 6 0;
+.welcome-glyph-host { -fx-padding: 0 0 10 0; }
+.welcome-glyph .df-icon-wrap { -fx-scale-x: 2.6; -fx-scale-y: 2.6; }
+.welcome-glyph .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+    -fx-opacity: 0.55;
 }
 .welcome-title {
     -fx-font-size: 24px;

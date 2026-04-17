@@ -11,6 +11,7 @@ import com.devflow.service.UserService;
 import com.devflow.view.ChatListView;
 import com.devflow.view.ChatView;
 import com.devflow.view.CustomTitleBar;
+import com.devflow.view.Icons;
 import com.devflow.view.GroupSettingsDialog;
 import com.devflow.view.LoginView;
 import com.devflow.view.MainLayout;
@@ -246,8 +247,10 @@ public class MainController {
         welcome.getStyleClass().add("welcome-content");
         welcome.setAlignment(Pos.CENTER);
 
-        Label glyph = new Label("\uD83D\uDCAC");
+        javafx.scene.Node glyph = Icons.messageSquare();
         glyph.getStyleClass().add("welcome-glyph");
+        StackPane glyphHost = new StackPane(glyph);
+        glyphHost.getStyleClass().add("welcome-glyph-host");
 
         Label title = new Label("Willkommen bei DevFlow");
         title.getStyleClass().add("welcome-title");
@@ -257,7 +260,7 @@ public class MainController {
         subtitle.setWrapText(true);
         subtitle.setMaxWidth(460);
 
-        welcome.getChildren().addAll(glyph, title, subtitle);
+        welcome.getChildren().addAll(glyphHost, title, subtitle);
         StackPane wrapper = new StackPane(welcome);
         wrapper.getStyleClass().add("content-area");
         mainLayout.setMainContent(wrapper);

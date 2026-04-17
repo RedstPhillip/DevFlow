@@ -106,6 +106,21 @@ public class Sidebar extends HBox {
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(14, 14, 12, 16));
 
+        // Workspace switcher — single-workspace placeholder. Clicking is a no-op
+        // for now; when multi-workspace ships, this becomes a popover menu.
+        Label workspaceIcon = new Label("\u25A3"); // ▣ window-like marker
+        workspaceIcon.getStyleClass().add("workspace-switcher-icon");
+        Label workspaceName = new Label("DevFlow Workspace");
+        workspaceName.getStyleClass().add("workspace-switcher-name");
+        Label workspaceChev = new Label("\u25BE"); // ▾
+        workspaceChev.getStyleClass().add("workspace-switcher-chevron");
+        Region wsSpacer = new Region();
+        HBox.setHgrow(wsSpacer, Priority.ALWAYS);
+        HBox workspaceSwitcher = new HBox(8, workspaceIcon, workspaceName, wsSpacer, workspaceChev);
+        workspaceSwitcher.getStyleClass().add("workspace-switcher");
+        workspaceSwitcher.setAlignment(Pos.CENTER_LEFT);
+        workspaceSwitcher.setPadding(new Insets(8, 12, 8, 12));
+
         searchField = new TextField();
         searchField.setPromptText("Chats durchsuchen…");
         searchField.getStyleClass().add("sidebar-search-field");
@@ -153,7 +168,7 @@ public class Sidebar extends HBox {
         userBar.setAlignment(Pos.CENTER_LEFT);
         userBar.setPadding(new Insets(12, 14, 12, 14));
 
-        panel.getChildren().addAll(header, searchWrap, listHost, userBar);
+        panel.getChildren().addAll(workspaceSwitcher, header, searchWrap, listHost, userBar);
 
         getChildren().addAll(rail, panel);
 
