@@ -256,13 +256,229 @@ Felder sind optional - nur gesendete Felder werden aktualisiert.
 
 ---
 
+## Workspaces
+
+Alle Workspace-Endpoints sind authentifiziert.
+
+Ein **Workspace** ist der Top-Level-Container für Team-Zusammenarbeit. Jeder User kann mehreren Workspaces angehören; ein Workspace enthält **Workspace-Gruppen** (Ordner) und **Group-Chats**. DMs leben ausserhalb von Workspaces.
+
+Das `Workspace`-Objekt:
+
+| Feld        | Typ              | Beschreibung                              |
+|-------------|------------------|-------------------------------------------|
+| id          | long             | Primary Key                               |
+| name        | string           | Anzeigename                               |
+| slug        | string           | URL-freundlicher Kurzname (eindeutig)     |
+| ownerId     | long             | Ersteller / initialer Owner               |
+| createdAt   | ISO 8601 string  |                                           |
+| memberCount | int              | Optional, nur bei List-Responses          |
+| role        | `"OWNER"` \| `"ADMIN"` \| `"MEMBER"` | Rolle des aktuellen Users (nur bei Listen) |
+
+### GET /api/workspaces
+
+Alle Workspaces auflisten, in denen der aktuelle User Mitglied ist.
+
+**Response 200 (OK):**
+```json
+[
+  {
+    "id": 1,
+    "name": "DevFlow",
+    "slug": "devflow",
+    "ownerId": 1,
+    "createdAt": "2026-04-10T08:00:00Z",
+    "memberCount": 12,
+    "role": "OWNER"
+  }
+]
+```
+
+---
+
+### POST /api/workspaces
+
+Neuen Workspace erstellen. Der Ersteller wird automatisch `OWNER`.
+
+**Request:**
+```json
+{ "name": "DevFlow", "slug": "devflow" }
+```
+
+**Response 201 (Created):** `Workspace`-Objekt.
+
+**Response 409 (Conflict):** `{ "error": "Slug already taken" }`
+
+---
+
+### GET /api/workspaces/{workspaceId}
+
+Detail eines einzelnen Workspaces.
+
+**Response 200 (OK):**
+```json
+{
+  "id": 1,
+  "name": "DevFlow",
+  "slug": "devflow",
+  "ownerId": 1,
+  "createdAt": "2026-04-10T08:00:00Z",
+  "memberCount": 12,
+  "role": "MEMBER"
+}
+```
+
+**Response 403 (Forbidden):** User ist nicht Mitglied.
+
+---
+
+### PUT /api/workspaces/{workspaceId}
+
+Workspace umbenennen (nur `OWNER` oder `ADMIN`).
+
+**Request:**
+```json
+{ "name": "DevFlow Team" }
+```
+
+**Response 200 (OK):** aktualisiertes `Workspace`-Objekt.
+
+---
+
+### DELETE /api/workspaces/{workspaceId}
+
+Workspace löschen (nur `OWNER`). Kaskadiert auf alle Gruppen + Group-Chats.
+
+**Response 204 (No Content)**
+
+---
+
+### GET /api/workspaces/{workspaceId}/members
+
+Mitglieder eines Workspaces.
+
+**Response 200 (OK):**
+```json
+[
+  { "userId": 1, "username": "alice", "role": "OWNER",  "joinedAt": "2026-04-10T08:00:00Z" },
+  { "userId": 2, "username": "bob",   "role": "MEMBER", "joinedAt": "2026-04-11T09:00:00Z" }
+]
+```
+
+---
+
+### POST /api/workspaces/{workspaceId}/members
+
+Mitglied hinzufügen (nur `OWNER`/`ADMIN`).
+
+**Request:**
+```json
+{ "userId": 5, "role": "MEMBER" }
+```
+
+**Response 201 (Created)**
+**Response 409 (Conflict):** bereits Mitglied.
+
+---
+
+### PUT /api/workspaces/{workspaceId}/members/{userId}
+
+Rolle eines Mitglieds ändern (nur `OWNER`).
+
+**Request:**
+```json
+{ "role": "ADMIN" }
+```
+
+**Response 200 (OK)**
+
+---
+
+### DELETE /api/workspaces/{workspaceId}/members/{userId}
+
+Mitglied entfernen. Owner/Admin können andere entfernen; User können sich selbst entfernen (austreten).
+
+**Response 204 (No Content)**
+**Response 409 (Conflict):** Wenn der letzte `OWNER` sich selbst entfernen will.
+
+---
+
+## Workspace-Gruppen
+
+Eine **Gruppe** ist ein Ordner innerhalb eines Workspaces, der Group-Chats gruppiert (wie Ordner in der VS-Code-Explorer-Sidebar).
+
+Das `Group`-Objekt:
+
+| Feld         | Typ              | Beschreibung                         |
+|--------------|------------------|--------------------------------------|
+| id           | long             | Primary Key                          |
+| workspaceId  | long             | Parent-Workspace                     |
+| name         | string           | Anzeigename                          |
+| sortOrder    | int              | Reihenfolge in der Sidebar (ASC)     |
+| createdAt    | ISO 8601 string  |                                      |
+
+### GET /api/workspaces/{workspaceId}/groups
+
+Alle Gruppen eines Workspaces (inkl. verschachtelter Chats falls `?includeChats=true`).
+
+**Response 200 (OK):**
+```json
+[
+  {
+    "id": 10,
+    "workspaceId": 1,
+    "name": "Backend",
+    "sortOrder": 0,
+    "createdAt": "2026-04-11T10:00:00Z",
+    "chats": [
+      { "id": 21, "type": "GROUP", "name": "Backend Allgemein", "groupId": 10, "workspaceId": 1 }
+    ]
+  }
+]
+```
+
+---
+
+### POST /api/workspaces/{workspaceId}/groups
+
+Neue Gruppe anlegen (nur `OWNER`/`ADMIN`).
+
+**Request:**
+```json
+{ "name": "Backend" }
+```
+
+**Response 201 (Created):** `Group`-Objekt.
+
+---
+
+### PUT /api/workspaces/{workspaceId}/groups/{groupId}
+
+Gruppe umbenennen oder verschieben (nur `OWNER`/`ADMIN`).
+
+**Request:**
+```json
+{ "name": "Backend Team", "sortOrder": 1 }
+```
+
+**Response 200 (OK)**
+
+---
+
+### DELETE /api/workspaces/{workspaceId}/groups/{groupId}
+
+Gruppe löschen. Die enthaltenen Chats bleiben erhalten, aber ihr `groupId` wird `null` gesetzt (hängen dann direkt im Workspace).
+
+**Response 204 (No Content)**
+
+---
+
 ## Chats
 
 Alle Chat-Endpoints sind authentifiziert.
 
 Chats koennen zwei Typen haben:
-- **`DM`** - Direktnachricht zwischen genau zwei Usern
-- **`GROUP`** - Gruppenchat mit Name, Owner und beliebig vielen Mitgliedern
+- **`DM`** - Direktnachricht zwischen genau zwei Usern (immer ohne `workspaceId` und `groupId`)
+- **`GROUP`** - Gruppenchat mit Name, Owner und beliebig vielen Mitgliedern. Kann optional in einer Workspace-Gruppe eingeordnet sein (`groupId` gesetzt), oder direkt im Workspace hängen (`workspaceId` gesetzt, `groupId` null).
 
 Das `Chat`-Objekt hat folgende Felder:
 
@@ -273,6 +489,8 @@ Das `Chat`-Objekt hat folgende Felder:
 | name              | string \| null                  | Nur bei GROUP, bei DM immer `null`            |
 | ownerId           | long \| null                    | Nur bei GROUP: User der die Gruppe erstellt hat |
 | memberAddPolicy   | `"OWNER_ONLY"` \| `"ALL_MEMBERS"` \| null | Nur bei GROUP: wer darf Mitglieder hinzufuegen |
+| workspaceId       | long \| null                    | Optional: Workspace in dem der Chat lebt (null = DM oder legacy) |
+| groupId           | long \| null                    | Optional: Workspace-Gruppe (Ordner) in der der Chat einsortiert ist |
 | createdAt         | ISO 8601 string                 |                                               |
 | participants      | User[]                          | Alle Teilnehmer (inkl. aktuellem User)        |
 | lastMessage       | Message \| null                 | Letzte Nachricht (oder `null`)                |
@@ -700,6 +918,19 @@ HTTP Status Codes:
 | DELETE  | /api/chats/{chatId}/leave                  | ja   | Gruppe verlassen                   |
 | GET     | /api/chats/{chatId}/messages               | ja   | Nachrichten abrufen / pollen       |
 | POST    | /api/chats/{chatId}/messages               | ja   | Nachricht senden                   |
+| GET     | /api/workspaces                            | ja   | Eigene Workspaces auflisten        |
+| POST    | /api/workspaces                            | ja   | Workspace erstellen                |
+| GET     | /api/workspaces/{id}                       | ja   | Workspace-Details                  |
+| PUT     | /api/workspaces/{id}                       | ja   | Workspace aktualisieren            |
+| DELETE  | /api/workspaces/{id}                       | ja   | Workspace loeschen (Owner)         |
+| GET     | /api/workspaces/{id}/members               | ja   | Workspace-Mitglieder auflisten     |
+| POST    | /api/workspaces/{id}/members               | ja   | Mitglied hinzufuegen (Admin+)      |
+| PUT     | /api/workspaces/{id}/members/{userId}      | ja   | Rolle aendern (Owner)              |
+| DELETE  | /api/workspaces/{id}/members/{userId}      | ja   | Mitglied entfernen (Admin+)        |
+| GET     | /api/workspaces/{id}/groups                | ja   | Gruppen eines Workspaces           |
+| POST    | /api/workspaces/{id}/groups                | ja   | Gruppe (Ordner) anlegen            |
+| PUT     | /api/workspaces/{id}/groups/{groupId}      | ja   | Gruppe umbenennen                  |
+| DELETE  | /api/workspaces/{id}/groups/{groupId}      | ja   | Gruppe loeschen                    |
 
 ---
 
@@ -715,14 +946,45 @@ CREATE TABLE user (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE workspace (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(500),
+    owner_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES user(id)
+);
+
+CREATE TABLE workspace_member (
+    workspace_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',    -- 'OWNER' | 'ADMIN' | 'MEMBER'
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (workspace_id, user_id),
+    FOREIGN KEY (workspace_id) REFERENCES workspace(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES user(id)
+);
+
+CREATE TABLE workspace_group (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    workspace_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (workspace_id) REFERENCES workspace(id) ON DELETE CASCADE
+);
+
 CREATE TABLE chat (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     type VARCHAR(10) NOT NULL DEFAULT 'DM',        -- 'DM' | 'GROUP'
     name VARCHAR(100),                              -- nur bei GROUP
     owner_id BIGINT,                                -- nur bei GROUP
     member_add_policy VARCHAR(20),                  -- 'OWNER_ONLY' | 'ALL_MEMBERS'
+    workspace_id BIGINT,                            -- optional: Chat gehoert zu Workspace
+    group_id BIGINT,                                -- optional: Chat liegt in Workspace-Gruppe (Ordner)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES user(id)
+    FOREIGN KEY (owner_id) REFERENCES user(id),
+    FOREIGN KEY (workspace_id) REFERENCES workspace(id) ON DELETE SET NULL,
+    FOREIGN KEY (group_id) REFERENCES workspace_group(id) ON DELETE SET NULL
 );
 
 CREATE TABLE chat_participant (
@@ -748,6 +1010,10 @@ CREATE TABLE message (
 CREATE INDEX idx_message_chat_id ON message(chat_id, id);
 -- Index fuer User-Suche
 CREATE INDEX idx_user_username_lower ON user((LOWER(username)));
+-- Indizes fuer Workspace/Group-Scope
+CREATE INDEX idx_chat_workspace_id ON chat(workspace_id);
+CREATE INDEX idx_chat_group_id ON chat(group_id);
+CREATE INDEX idx_workspace_group_workspace ON workspace_group(workspace_id);
 ```
 
 ---
@@ -775,4 +1041,5 @@ Das JWT sollte mindestens folgende Claims enthalten:
 
 ## Changelog
 
+- **2026-04-17**: Workspaces (`/api/workspaces` mit Rollen OWNER/ADMIN/MEMBER) und Workspace-Gruppen als Ordner im Workspace (`/api/workspaces/{id}/groups`); `Chat` um optionale `workspaceId` + `groupId` erweitert, damit DMs/Gruppen in der Sidebar nach Workspace und Ordner gebuendelt werden koennen.
 - **2026-04-15**: Gruppen-Chats (`POST/PUT /api/chats/group`, Member-Management, Leave), User-Suche (`/api/users/search`), Profil-Update (`PUT /api/users/me`), `avatarUrl` + `online` am User, `name`/`ownerId`/`memberAddPolicy` am Chat.
