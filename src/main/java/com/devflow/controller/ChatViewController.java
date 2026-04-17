@@ -86,11 +86,16 @@ public class ChatViewController {
         messageService.sendMessage(chat.getId(), content)
                 .thenAcceptAsync(message -> {
                     if (!active) return;
+                    // Defensive: some servers don't echo transmitterId on POST. We know
+                    // who sent it — fill it in so the bubble renders on the right side.
+                    if (message.getTransmitterId() == 0) {
+                        message.setTransmitterId(currentUser.getId());
+                    }
                     appendMessage(message);
-                    lastMessageId = message.getId();
+                    if (message.getId() > 0) lastMessageId = message.getId();
                     view.getSendButton().setDisable(false);
                     view.getInputField().requestFocus();
-                    // Always jump to bottom after sending — the user just typed it, they want to see it land.
+                    // Always jump to bottom after sending.
                     view.scrollToBottom();
                 }, Platform::runLater)
                 .exceptionally(ex -> {

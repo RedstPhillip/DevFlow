@@ -145,14 +145,10 @@ public class Sidebar extends HBox {
         userInfo.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 
-        userSettingsBtn = new Button();
-        userSettingsBtn.setGraphic(Icons.settings());
-        userSettingsBtn.getStyleClass().add("sidebar-settings-btn");
-        userSettingsBtn.setTooltip(new Tooltip("Einstellungen"));
-        userSettingsBtn.setFocusTraversable(false);
-        userSettingsBtn.setOnAction(e -> activate(RailKey.SETTINGS));
+        // Settings access lives in the rail — no second cog here.
+        userSettingsBtn = null;
 
-        HBox userBar = new HBox(10, userAvatar, userInfo, userSettingsBtn);
+        HBox userBar = new HBox(10, userAvatar, userInfo);
         userBar.getStyleClass().add("sidebar-user-bar");
         userBar.setAlignment(Pos.CENTER_LEFT);
         userBar.setPadding(new Insets(12, 14, 12, 14));
@@ -207,8 +203,6 @@ public class Sidebar extends HBox {
         newChatButton.setManaged(!isSettings);
         searchWrap.setVisible(!isSettings);
         searchWrap.setManaged(!isSettings);
-        userSettingsBtn.setVisible(!isSettings);
-        userSettingsBtn.setManaged(!isSettings);
         if (isSettings) {
             if (activeSettingsSection == null) activeSettingsSection = "appearance";
             updateSettingsNavStyles();

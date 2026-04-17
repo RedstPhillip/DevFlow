@@ -92,8 +92,11 @@ public class ChatView extends VBox {
 
     /** Force-scroll to the newest message. Use after sending an own message. */
     public void scrollToBottom() {
-        // Defer one frame so newly-added bubbles have been laid out.
-        javafx.application.Platform.runLater(() -> scrollPane.setVvalue(1.0));
+        // Double-pump: the first runLater lets the newly-added bubble become part
+        // of the layout; the nested one runs after the scroll-pane recomputes its
+        // vmax, so setVvalue(1.0) actually lands at the true bottom.
+        javafx.application.Platform.runLater(() ->
+                javafx.application.Platform.runLater(() -> scrollPane.setVvalue(1.0)));
     }
 
     public StackPane getAvatarHost() { return avatarHost; }

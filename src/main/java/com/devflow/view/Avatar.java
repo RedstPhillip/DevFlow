@@ -8,19 +8,19 @@ import javafx.scene.shape.Circle;
 
 public class Avatar extends StackPane {
 
-    // Harmonised palette — slightly muted vs. saturated marketing colours so that
-    // a list of ten avatars side-by-side reads as one cohesive group, not a rainbow.
+    // Tight palette around the app's azure primary — cohesive rather than rainbow.
+    // All hues are muted/darker so white initials stay legible.
     private static final String[] PALETTE = {
-            "#5e6ad2", // indigo (matches primary)
-            "#7c6fdc", // violet
-            "#9b6dd0", // purple
-            "#c160a8", // pink
-            "#d96775", // rose
-            "#d68a4a", // amber
-            "#5fa472", // green
-            "#4ea1b8", // teal
-            "#5b8ed6", // sky
-            "#6a73b8"  // slate-blue
+            "#2b7fff", // primary azure
+            "#1f6de8", // azure press
+            "#5a93ff", // azure light
+            "#3f6ad0", // indigo
+            "#6a73b8", // slate blue
+            "#3d6a99", // steel
+            "#4a7c74", // teal-slate
+            "#5f6b7a", // cool grey
+            "#6a5c8a", // muted violet
+            "#874d6d"  // muted rose
     };
 
     private final Circle circle;
