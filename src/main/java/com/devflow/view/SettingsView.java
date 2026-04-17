@@ -42,8 +42,8 @@ public class SettingsView extends ScrollPane {
         root.setPadding(new Insets(32, 40, 32, 40));
         root.setMaxWidth(720);
 
-        Label header = new Label("Einstellungen");
-        header.getStyleClass().add("settings-header");
+        // The sidebar brand already says "Einstellungen" when this view is active —
+        // no need to repeat the title at the top of the scroll content.
 
         // ── Appearance ──
         Label appearanceTitle = sectionTitle("ERSCHEINUNGSBILD");
@@ -149,7 +149,6 @@ public class SettingsView extends ScrollPane {
         aboutCard.getChildren().addAll(version, about);
 
         root.getChildren().addAll(
-                header,
                 appearanceTitle, appearanceCard,
                 githubTitle, githubCard,
                 accountTitle, accountCard,
