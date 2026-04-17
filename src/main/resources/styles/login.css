@@ -1,3 +1,11 @@
+/* ══════════════════════════════════════════════════════════════
+   Login screen
+   ══════════════════════════════════════════════════════════════ */
+
+.login-shell {
+    -fx-background-color: -df-background;
+}
+
 .login-root {
     -fx-background-color: -df-background;
 }
@@ -6,12 +14,13 @@
     -fx-background-color: -df-card;
     -fx-background-radius: 12;
     -fx-border-color: -df-border;
+    -fx-border-width: 1;
     -fx-border-radius: 12;
-    -fx-padding: 40;
+    -fx-padding: 36 36 30 36;
 }
 
 .login-title {
-    -fx-font-size: 28px;
+    -fx-font-size: 24px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
@@ -25,28 +34,31 @@
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
-    -fx-padding: 10 14;
+    -fx-padding: 10 12;
     -fx-font-size: 13px;
 }
 .login-field:focused {
     -fx-border-color: -df-ring;
+    -fx-border-width: 1.5;
+    -fx-padding: 9.5 11.5;
 }
 
 .login-button {
-    -fx-padding: 10 24;
+    -fx-padding: 10 20;
     -fx-font-size: 13px;
     -fx-font-weight: 700;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
 }
 
 .login-error {
     -fx-text-fill: -df-destructive;
     -fx-font-size: 12px;
+    -fx-font-weight: 500;
 }
 
 .login-footer {

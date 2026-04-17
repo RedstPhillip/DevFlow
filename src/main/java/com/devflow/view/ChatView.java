@@ -42,7 +42,8 @@ public class ChatView extends VBox {
         headerText.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(headerText, Priority.ALWAYS);
 
-        infoButton = new Button("\u2699");
+        infoButton = new Button();
+        infoButton.setGraphic(Icons.settings());
         infoButton.getStyleClass().add("chat-header-btn");
         infoButton.setTooltip(new Tooltip("Gruppen-Einstellungen"));
         infoButton.setVisible(false);

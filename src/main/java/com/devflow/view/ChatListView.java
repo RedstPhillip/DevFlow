@@ -166,7 +166,7 @@ public class ChatListView extends StackPane {
 
             HBox cell = new HBox(12, avatar, textBox, timeLabel);
             cell.setAlignment(Pos.CENTER_LEFT);
-            cell.setPadding(new Insets(10, 14, 10, 14));
+            cell.setPadding(new Insets(9, 14, 9, 14));
 
             setGraphic(cell);
             setText(null);

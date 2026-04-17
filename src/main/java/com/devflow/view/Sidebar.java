@@ -60,22 +60,24 @@ public class Sidebar extends HBox {
         rail.getStyleClass().add("activity-rail");
         rail.setPadding(new Insets(10, 8, 10, 8));
 
-        toggleButton = new Button("\u2630");
+        toggleButton = new Button();
+        toggleButton.setGraphic(Icons.menu());
         toggleButton.getStyleClass().add("rail-toggle");
         toggleButton.setTooltip(new Tooltip("Seitenleiste ein-/ausklappen"));
         toggleButton.setFocusTraversable(false);
         toggleButton.setOnAction(e -> setExpanded(!expanded));
 
-        chatsItem = buildRailItem("\uD83D\uDCAC", "Chats");
+        // SVG line-art icons render identically on every platform.
+        chatsItem = buildRailItem(Icons.messageSquare(), "Chats");
         chatsItem.setOnAction(e -> activate(RailKey.CHATS));
 
-        settingsItem = buildRailItem("\u2699", "Einstellungen");
+        settingsItem = buildRailItem(Icons.settings(), "Einstellungen");
         settingsItem.setOnAction(e -> activate(RailKey.SETTINGS));
 
         Region grow = new Region();
         VBox.setVgrow(grow, Priority.ALWAYS);
 
-        profileItem = buildRailItem("\u263A", "Profil");
+        profileItem = buildRailItem(Icons.user(), "Profil");
         profileItem.setOnAction(e -> { if (onProfileClick != null) onProfileClick.run(); });
 
         rail.getChildren().addAll(toggleButton, chatsItem, settingsItem, grow, profileItem);
@@ -90,7 +92,8 @@ public class Sidebar extends HBox {
         brand = new Label("Chats");
         brand.getStyleClass().add("sidebar-brand");
 
-        newChatButton = new Button("+");
+        newChatButton = new Button();
+        newChatButton.setGraphic(Icons.plus());
         newChatButton.getStyleClass().add("sidebar-new-chat-btn");
         newChatButton.setTooltip(new Tooltip("Neuer Chat"));
         newChatButton.setFocusTraversable(false);
@@ -120,10 +123,10 @@ public class Sidebar extends HBox {
         settingsNav.getStyleClass().add("settings-nav");
         settingsNav.setPadding(new Insets(4, 8, 8, 8));
         settingsNav.getChildren().addAll(
-                buildSettingsNavItem("appearance", "\uD83C\uDFA8", "Erscheinungsbild"),
-                buildSettingsNavItem("github", "\uD83D\uDD11", "GitHub Integration"),
-                buildSettingsNavItem("account", "\uD83D\uDC64", "Account"),
-                buildSettingsNavItem("about", "\u2139", "Über")
+                buildSettingsNavItem("appearance", Icons.palette(),    "Erscheinungsbild"),
+                buildSettingsNavItem("github",     Icons.github(),     "GitHub Integration"),
+                buildSettingsNavItem("account",    Icons.userCircle(), "Account"),
+                buildSettingsNavItem("about",      Icons.info(),       "Über")
         );
 
         userAvatar = new Avatar("?", 36);
@@ -142,7 +145,8 @@ public class Sidebar extends HBox {
         userInfo.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 
-        userSettingsBtn = new Button("\u2699");
+        userSettingsBtn = new Button();
+        userSettingsBtn.setGraphic(Icons.settings());
         userSettingsBtn.getStyleClass().add("sidebar-settings-btn");
         userSettingsBtn.setTooltip(new Tooltip("Einstellungen"));
         userSettingsBtn.setFocusTraversable(false);
@@ -162,14 +166,16 @@ public class Sidebar extends HBox {
         applyPanelMode();
     }
 
-    private Button buildSettingsNavItem(String key, String icon, String label) {
+    private Button buildSettingsNavItem(String key, Node icon, String label) {
         Button b = new Button();
         b.getStyleClass().add("settings-nav-item");
-        Label iconLbl = new Label(icon);
-        iconLbl.getStyleClass().add("settings-nav-icon");
+        StackPane iconHost = new StackPane(icon);
+        iconHost.getStyleClass().add("settings-nav-icon");
+        iconHost.setMinSize(18, 18);
+        iconHost.setPrefSize(18, 18);
         Label textLbl = new Label(label);
         textLbl.getStyleClass().add("settings-nav-label");
-        HBox content = new HBox(12, iconLbl, textLbl);
+        HBox content = new HBox(12, iconHost, textLbl);
         content.setAlignment(Pos.CENTER_LEFT);
         b.setGraphic(content);
         b.setMaxWidth(Double.MAX_VALUE);
@@ -214,14 +220,16 @@ public class Sidebar extends HBox {
         }
     }
 
-    private Button buildRailItem(String icon, String label) {
+    private Button buildRailItem(Node icon, String label) {
         Button b = new Button();
         b.getStyleClass().add("rail-item");
-        Label iconLbl = new Label(icon);
-        iconLbl.getStyleClass().add("rail-icon");
+        StackPane iconHost = new StackPane(icon);
+        iconHost.getStyleClass().add("rail-icon");
+        iconHost.setMinSize(20, 20);
+        iconHost.setPrefSize(20, 20);
         Label textLbl = new Label(label);
         textLbl.getStyleClass().add("label");
-        HBox content = new HBox(12, iconLbl, textLbl);
+        HBox content = new HBox(12, iconHost, textLbl);
         content.setAlignment(Pos.CENTER_LEFT);
         b.setGraphic(content);
         b.setTooltip(new Tooltip(label));
@@ -259,7 +267,7 @@ public class Sidebar extends HBox {
                 text.setManaged(expanded);
             }
         }
-        toggleButton.setText(expanded ? "\u276E" : "\u2630");
+        toggleButton.setGraphic(expanded ? Icons.chevronLeft() : Icons.menu());
     }
 
     public void setActive(RailKey key) {

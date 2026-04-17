@@ -14,7 +14,9 @@ public class ModalOverlay extends StackPane {
 
     private final StackPane host;
     private final Node blurTarget;
-    private final GaussianBlur blur = new GaussianBlur(16);
+    // 8 px blur is ~4x cheaper to rerender than 16 px on JavaFX/Prism but still
+    // gives the focus-cue we want when a dialog opens. Pair with -df-overlay scrim.
+    private final GaussianBlur blur = new GaussianBlur(8);
 
     public ModalOverlay(StackPane host, Node blurTarget, Node content) {
         this.host = host;

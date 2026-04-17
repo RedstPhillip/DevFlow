@@ -8,9 +8,19 @@ import javafx.scene.shape.Circle;
 
 public class Avatar extends StackPane {
 
+    // Harmonised palette — slightly muted vs. saturated marketing colours so that
+    // a list of ten avatars side-by-side reads as one cohesive group, not a rainbow.
     private static final String[] PALETTE = {
-            "#2b7fff", "#8b5cf6", "#ec4899", "#f59e0b",
-            "#10b981", "#06b6d4", "#ef4444", "#6366f1"
+            "#5e6ad2", // indigo (matches primary)
+            "#7c6fdc", // violet
+            "#9b6dd0", // purple
+            "#c160a8", // pink
+            "#d96775", // rose
+            "#d68a4a", // amber
+            "#5fa472", // green
+            "#4ea1b8", // teal
+            "#5b8ed6", // sky
+            "#6a73b8"  // slate-blue
     };
 
     private final Circle circle;

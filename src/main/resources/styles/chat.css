@@ -1,24 +1,27 @@
-.chat-view {
-    -fx-background-color: -df-background;
-}
+/* ══════════════════════════════════════════════════════════════
+   Chat module styles
+   Flat bubbles — no drop shadows per row (was the main scroll
+   performance hit). Depth comes from color contrast and a 1 px
+   border on incoming bubbles only.
+   ══════════════════════════════════════════════════════════════ */
+
+.chat-view { -fx-background-color: -df-background; }
 
 .chat-header {
     -fx-background-color: -df-background;
-    -fx-border-color: -df-border;
+    -fx-border-color: -df-border-soft;
     -fx-border-width: 0 0 1 0;
 }
 
 .chat-header-name {
-    -fx-font-size: 15px;
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
-
 .chat-header-status {
     -fx-font-size: 11px;
     -fx-text-fill: -df-muted-foreground;
 }
-
 .chat-header-status-online {
     -fx-font-size: 11px;
     -fx-text-fill: -df-online;
@@ -27,24 +30,26 @@
 
 .chat-header-btn {
     -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 14px;
     -fx-padding: 6 10;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
     -fx-border-color: transparent;
     -fx-cursor: hand;
+    -fx-alignment: center;
 }
-.chat-header-btn:hover {
-    -fx-background-color: -df-accent;
-    -fx-text-fill: -df-foreground;
+.chat-header-btn .df-icon-wrap { -fx-scale-x: 0.55; -fx-scale-y: 0.55; }
+.chat-header-btn .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 2.0;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
 }
+.chat-header-btn:hover { -fx-background-color: -df-accent; }
+.chat-header-btn:hover .df-icon { -fx-stroke: -df-foreground; }
 
 .messages-scroll,
-.messages-scroll > .viewport {
-    -fx-background-color: -df-background;
-}
-
+.messages-scroll > .viewport,
 .messages-box {
     -fx-background-color: -df-background;
 }
@@ -55,50 +60,44 @@
     -fx-font-size: 11px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-muted-foreground;
-    -fx-padding: 0 0 2 0;
+    -fx-padding: 0 0 2 4;
 }
 
 .bubble-own {
     -fx-background-color: -df-primary;
-    -fx-background-radius: 16 16 4 16;
-    -fx-padding: 9 14;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 4, 0.1, 0, 1);
+    -fx-background-radius: 12 12 4 12;
+    -fx-padding: 7 12;
 }
-
 .bubble-own-text {
-    -fx-text-fill: #ffffff;
+    -fx-fill: #ffffff;
     -fx-font-size: 13px;
 }
 
 .bubble-other {
     -fx-background-color: -df-secondary;
-    -fx-background-radius: 16 16 16 4;
-    -fx-border-color: -df-border;
-    -fx-border-radius: 16 16 16 4;
-    -fx-padding: 9 14;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 4, 0.1, 0, 1);
+    -fx-background-radius: 12 12 12 4;
+    -fx-border-color: -df-border-soft;
+    -fx-border-width: 1;
+    -fx-border-radius: 12 12 12 4;
+    -fx-padding: 7 12;
 }
-
-.light-theme .bubble-own,
-.light-theme .bubble-other {
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 4, 0.1, 0, 1);
-}
-
 .bubble-other-text {
-    -fx-text-fill: -df-foreground;
+    -fx-fill: -df-foreground;
     -fx-font-size: 13px;
 }
 
-/* Timestamp outside the bubble — always readable */
+/* Timestamp outside the bubble */
 .bubble-time {
     -fx-font-size: 10px;
     -fx-text-fill: -df-muted-foreground;
-    -fx-padding: 2 4 0 4;
+    -fx-padding: 1 4 0 4;
 }
+
+/* ── Input bar ── */
 
 .chat-input-bar {
     -fx-background-color: -df-background;
-    -fx-border-color: -df-border;
+    -fx-border-color: -df-border-soft;
     -fx-border-width: 1 0 0 0;
 }
 
@@ -106,25 +105,30 @@
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
-    -fx-padding: 10 16;
+    -fx-padding: 9 16;
     -fx-font-size: 13px;
 }
-.chat-input:focused { -fx-border-color: -df-ring; }
+.chat-input:focused {
+    -fx-border-color: -df-ring;
+    -fx-border-width: 1.5;
+    -fx-padding: 8.5 15.5;
+}
 
 .chat-send-btn {
     -fx-background-color: -df-primary;
     -fx-text-fill: -df-primary-foreground;
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
     -fx-border-color: transparent;
     -fx-padding: 8 18;
     -fx-font-size: 13px;
     -fx-font-weight: 700;
     -fx-cursor: hand;
 }
-.chat-send-btn:hover { -fx-background-color: -df-primary-hover; }
-.chat-send-btn:disabled { -fx-opacity: 0.55; }
+.chat-send-btn:hover  { -fx-background-color: -df-primary-hover; }
+.chat-send-btn:pressed{ -fx-background-color: -df-primary-press; }
+.chat-send-btn:disabled { -fx-opacity: 0.5; }

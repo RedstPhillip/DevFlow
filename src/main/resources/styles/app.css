@@ -1,78 +1,107 @@
 /* ══════════════════════════════════════════════════════════════
-   DevFlow Design System
+   DevFlow — Design System
+   Linear / Vercel inspired. Enterprise dark by default.
+   Performance: NO drop-shadows on items rendered per-row
+                (chat bubbles, list cells). Only the window frame
+                and modal cards carry effects.
    ══════════════════════════════════════════════════════════════ */
 
 .root {
-    -fx-font-family: "Roboto", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-family: "Roboto", "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-smoothing-type: lcd;
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: 500;
 
-    -df-background: #0a0a0a;
-    -df-foreground: #fafafa;
-    -df-card: #141414;
-    -df-card-foreground: #fafafa;
-    -df-popover: #1c1c1c;
-    -df-popover-foreground: #fafafa;
-    -df-primary: #2b7fff;
-    -df-primary-hover: #4a92ff;
-    -df-primary-foreground: #ffffff;
-    -df-secondary: #1e1e1e;
-    -df-secondary-foreground: #fafafa;
-    -df-muted: #262626;
-    -df-muted-foreground: #a1a1a1;
-    -df-accent: #2a2a2a;
-    -df-accent-foreground: #fafafa;
-    -df-destructive: #ff6467;
+    /* ── Dark palette (default) ── */
+    -df-background:           #0b0b0e;
+    -df-foreground:           #f4f4f5;
+    -df-card:                 #131318;
+    -df-card-foreground:      #f4f4f5;
+    -df-popover:              #18181d;
+    -df-popover-foreground:   #f4f4f5;
+
+    -df-primary:              #5e6ad2;
+    -df-primary-hover:        #7178dd;
+    -df-primary-press:        #4f5bc4;
+    -df-primary-foreground:   #ffffff;
+    -df-primary-soft:         rgba(94, 106, 210, 0.14);
+
+    -df-secondary:            #1a1a20;
+    -df-secondary-foreground: #f4f4f5;
+    -df-muted:                #1f1f25;
+    -df-muted-foreground:     #a1a1aa;
+
+    -df-accent:               #232329;
+    -df-accent-foreground:    #f4f4f5;
+
+    -df-destructive:          #f87171;
+    -df-destructive-soft:     rgba(248, 113, 113, 0.12);
     -df-destructive-foreground: #fafafa;
-    -df-border: #232323;
-    -df-border-soft: #1a1a1a;
-    -df-input: #1e1e1e;
-    -df-ring: #3b82f6;
-    -df-titlebar: #0f0f0f;
-    -df-rail: #0c0c0c;
-    -df-rail-hover: #1c1c1c;
-    -df-sidebar: #111111;
-    -df-sidebar-foreground: #fafafa;
-    -df-sidebar-border: #1e1e1e;
-    -df-success: #22c55e;
-    -df-online: #22c55e;
-    -df-offline: #6b7280;
-    -df-overlay: rgba(0, 0, 0, 0.55);
+
+    -df-border:               #26262d;
+    -df-border-soft:          #1c1c22;
+    -df-input:                #16161b;
+    -df-ring:                 #6e78dd;
+
+    -df-titlebar:             #0e0e13;
+    -df-rail:                 #0a0a0e;
+    -df-rail-hover:           #18181e;
+
+    -df-sidebar:              #101015;
+    -df-sidebar-foreground:   #f4f4f5;
+    -df-sidebar-border:       #1d1d22;
+
+    -df-success:              #22c55e;
+    -df-online:               #22c55e;
+    -df-offline:              #71717a;
+
+    -df-overlay:              rgba(0, 0, 0, 0.55);
 }
 
 .light-theme {
-    -df-background: #ffffff;
-    -df-foreground: #0a0a0a;
-    -df-card: #ffffff;
-    -df-card-foreground: #0a0a0a;
-    -df-popover: #ffffff;
-    -df-popover-foreground: #0a0a0a;
-    -df-primary: #2b7fff;
-    -df-primary-hover: #1d6be0;
-    -df-primary-foreground: #ffffff;
-    -df-secondary: #f5f5f5;
-    -df-secondary-foreground: #171717;
-    -df-muted: #f0f0f0;
-    -df-muted-foreground: #737373;
-    -df-accent: #ececec;
-    -df-accent-foreground: #171717;
-    -df-destructive: #dc2626;
+    -df-background:           #ffffff;
+    -df-foreground:           #0a0a0c;
+    -df-card:                 #ffffff;
+    -df-card-foreground:      #0a0a0c;
+    -df-popover:              #ffffff;
+    -df-popover-foreground:   #0a0a0c;
+
+    -df-primary:              #5e6ad2;
+    -df-primary-hover:        #4f5bc4;
+    -df-primary-press:        #4148b3;
+    -df-primary-foreground:   #ffffff;
+    -df-primary-soft:         rgba(94, 106, 210, 0.10);
+
+    -df-secondary:            #f4f4f5;
+    -df-secondary-foreground: #18181b;
+    -df-muted:                #f4f4f5;
+    -df-muted-foreground:     #71717a;
+
+    -df-accent:               #efeff1;
+    -df-accent-foreground:    #18181b;
+
+    -df-destructive:          #dc2626;
+    -df-destructive-soft:     rgba(220, 38, 38, 0.08);
     -df-destructive-foreground: #ffffff;
-    -df-border: #e5e5e5;
-    -df-border-soft: #eeeeee;
-    -df-input: #f7f7f7;
-    -df-ring: #2b7fff;
-    -df-titlebar: #f5f5f5;
-    -df-rail: #f0f0f0;
-    -df-rail-hover: #e5e5e5;
-    -df-sidebar: #fafafa;
-    -df-sidebar-foreground: #0a0a0a;
-    -df-sidebar-border: #e5e5e5;
-    -df-success: #16a34a;
-    -df-online: #16a34a;
-    -df-offline: #9ca3af;
-    -df-overlay: rgba(0, 0, 0, 0.35);
+
+    -df-border:               #e4e4e7;
+    -df-border-soft:          #ededee;
+    -df-input:                #fafafa;
+    -df-ring:                 #5e6ad2;
+
+    -df-titlebar:             #fafafa;
+    -df-rail:                 #f7f7f8;
+    -df-rail-hover:           #efeff1;
+
+    -df-sidebar:              #fafafa;
+    -df-sidebar-foreground:   #0a0a0c;
+    -df-sidebar-border:       #e4e4e7;
+
+    -df-success:              #16a34a;
+    -df-online:               #16a34a;
+    -df-offline:              #a1a1aa;
+
+    -df-overlay:              rgba(0, 0, 0, 0.35);
 }
 
 /* ── Global ── */
@@ -86,7 +115,7 @@
 .muted { -fx-text-fill: -df-muted-foreground; }
 
 .section-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
@@ -97,24 +126,32 @@
     -fx-border-color: -df-border;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
-    -fx-padding: 6 10;
-    -fx-font-size: 12px;
+    -fx-padding: 5 8;
+    -fx-font-size: 11px;
 }
 
 .separator { -fx-background-color: transparent; }
-.separator .line { -fx-border-color: -df-border; -fx-border-width: 1 0 0 0; }
+.separator .line { -fx-border-color: -df-border-soft; -fx-border-width: 1 0 0 0; }
 
-.scroll-bar { -fx-background-color: transparent; -fx-padding: 1; }
-.scroll-bar:vertical { -fx-pref-width: 10; }
-.scroll-bar:horizontal { -fx-pref-height: 10; }
-.scroll-bar .track { -fx-background-color: transparent; -fx-border-color: transparent; }
-.scroll-bar .track-background { -fx-background-color: transparent; }
+/* ── Scrollbars (slim, fade-on-hover) ── */
+
+.scroll-bar { -fx-background-color: transparent; -fx-padding: 0; }
+.scroll-bar:vertical { -fx-pref-width: 8; }
+.scroll-bar:horizontal { -fx-pref-height: 8; }
+.scroll-bar .track,
+.scroll-bar .track-background { -fx-background-color: transparent; -fx-border-color: transparent; }
 .scroll-bar .thumb {
     -fx-background-color: -df-muted;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-background-insets: 2;
+    -fx-opacity: 0.55;
 }
-.scroll-bar .thumb:hover { -fx-background-color: -df-muted-foreground; }
+.scroll-bar:hover .thumb,
+.scroll-bar .thumb:hover,
+.scroll-bar .thumb:pressed {
+    -fx-background-color: -df-muted-foreground;
+    -fx-opacity: 0.85;
+}
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-padding: 0; }
 .scroll-bar .increment-arrow,
@@ -122,30 +159,33 @@
 
 .scroll-pane { -fx-background: transparent; -fx-background-color: transparent; }
 .scroll-pane > .viewport { -fx-background-color: transparent; }
+.scroll-pane > .corner { -fx-background-color: transparent; }
 
 /* ── Buttons ── */
 
 .button {
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-cursor: hand;
     -fx-font-size: 13px;
-    -fx-padding: 8 16;
+    -fx-font-weight: 600;
+    -fx-padding: 7 14;
 }
 
 .button-primary {
     -fx-background-color: -df-primary;
     -fx-text-fill: -df-primary-foreground;
-    -fx-font-weight: 700;
     -fx-border-color: transparent;
 }
-.button-primary:hover { -fx-background-color: -df-primary-hover; }
-.button-primary:disabled { -fx-opacity: 0.55; }
+.button-primary:hover  { -fx-background-color: -df-primary-hover; }
+.button-primary:pressed{ -fx-background-color: -df-primary-press; }
+.button-primary:disabled { -fx-opacity: 0.5; }
 
 .button-secondary {
     -fx-background-color: -df-secondary;
     -fx-text-fill: -df-secondary-foreground;
     -fx-border-color: -df-border;
+    -fx-border-width: 1;
 }
 .button-secondary:hover { -fx-background-color: -df-accent; }
 
@@ -153,9 +193,13 @@
     -fx-background-color: transparent;
     -fx-text-fill: -df-destructive;
     -fx-border-color: -df-destructive;
-    -fx-font-weight: 700;
+    -fx-border-width: 1;
+    -fx-font-weight: 600;
 }
 .button-destructive:hover {
+    -fx-background-color: -df-destructive-soft;
+}
+.button-destructive:pressed {
     -fx-background-color: -df-destructive;
     -fx-text-fill: -df-destructive-foreground;
 }
@@ -165,31 +209,33 @@
     -fx-text-fill: -df-muted-foreground;
     -fx-border-color: transparent;
     -fx-padding: 6 10;
+    -fx-font-weight: 500;
 }
 .button-ghost:hover {
     -fx-background-color: -df-accent;
     -fx-text-fill: -df-foreground;
 }
 
-/* ── Text Fields ── */
+/* ── Inputs ── */
 
 .text-field, .password-field {
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
-    -fx-padding: 10 12;
+    -fx-padding: 8 11;
     -fx-font-size: 13px;
 }
 .text-field:focused, .password-field:focused {
     -fx-border-color: -df-ring;
     -fx-border-width: 1.5;
+    -fx-padding: 7.5 10.5;
 }
 
-/* ── Main Layout ── */
+/* ── Window frame (rounded transparent stage) ── */
 
 .main-layout {
     -fx-background-color: transparent;
@@ -199,14 +245,15 @@
 
 .window-frame {
     -fx-background-color: -df-background;
-    -fx-background-radius: 10;
+    -fx-background-radius: 12;
     -fx-border-color: -df-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 12;
     -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 24, 0.18, 0, 6);
+    /* Single, soft shadow — only one node carries this effect, so it's cheap. */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 22, 0.16, 0, 6);
 }
 .light-theme .window-frame {
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 24, 0.15, 0, 6);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.14), 22, 0.14, 0, 6);
 }
 .window-frame.maximized {
     -fx-background-radius: 0;
@@ -217,63 +264,60 @@
 
 .window-frame > .sidebar,
 .window-frame .sidebar {
-    -fx-background-radius: 0 0 0 10;
+    -fx-background-radius: 0 0 0 12;
 }
-.window-frame.maximized .sidebar {
-    -fx-background-radius: 0;
-}
+.window-frame.maximized .sidebar { -fx-background-radius: 0; }
+
+.window-frame .activity-rail { -fx-background-radius: 0 0 0 12; }
+.window-frame.maximized .activity-rail { -fx-background-radius: 0; }
 
 .content-area { -fx-background-color: -df-background; }
 
-/* ── Custom Title Bar ── */
+/* ── Title bar ── */
 
 .titlebar {
     -fx-background-color: -df-titlebar;
     -fx-border-color: -df-border-soft;
     -fx-border-width: 0 0 1 0;
-    -fx-min-height: 38;
-    -fx-max-height: 38;
-    -fx-pref-height: 38;
-    -fx-background-radius: 10 10 0 0;
+    -fx-min-height: 36;
+    -fx-max-height: 36;
+    -fx-pref-height: 36;
+    -fx-background-radius: 12 12 0 0;
 }
-.window-frame.maximized .titlebar {
-    -fx-background-radius: 0;
-}
+.window-frame.maximized .titlebar { -fx-background-radius: 0; }
 
 .titlebar-brand {
     -fx-font-size: 13px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
-
 .titlebar-subtitle {
     -fx-font-size: 11px;
     -fx-text-fill: -df-muted-foreground;
 }
-
 .titlebar-button {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
     -fx-font-size: 12px;
-    -fx-padding: 0 16;
+    -fx-padding: 0 14;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-border-color: transparent;
     -fx-cursor: hand;
-    -fx-min-height: 38;
-    -fx-max-height: 38;
-    -fx-min-width: 46;
+    -fx-min-height: 36;
+    -fx-max-height: 36;
+    -fx-min-width: 44;
 }
 .titlebar-button:hover {
     -fx-background-color: -df-accent;
     -fx-text-fill: -df-foreground;
 }
-.titlebar-button-close:hover {
+.window-frame .titlebar-button-close:hover {
     -fx-background-color: #e81123;
     -fx-text-fill: white;
 }
 
-/* ── Activity Rail (collapsible left nav) ── */
+/* ── Activity rail ── */
 
 .activity-rail {
     -fx-background-color: -df-rail;
@@ -289,9 +333,9 @@
     -fx-alignment: CENTER_LEFT;
     -fx-content-display: LEFT;
     -fx-graphic-text-gap: 12;
-    -fx-padding: 10 12;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-padding: 8 12;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: transparent;
     -fx-cursor: hand;
 }
@@ -300,34 +344,48 @@
     -fx-text-fill: -df-foreground;
 }
 .rail-item-active {
-    -fx-background-color: -df-primary, -df-accent;
-    -fx-background-insets: 0, 0 0 0 3;
-    -fx-background-radius: 8;
+    -fx-background-color: -df-primary-soft;
     -fx-text-fill: -df-foreground;
     -fx-font-weight: 700;
 }
+.rail-item-active .rail-icon .df-icon { -fx-stroke: -df-primary; }
 
 .rail-icon {
-    -fx-font-size: 16px;
-    -fx-min-width: 22;
     -fx-alignment: center;
-    -fx-text-fill: inherit;
 }
+/* SVG icons inside the rail are ~14px square (scaled from 24px grid). */
+.rail-icon .df-icon-wrap {
+    -fx-scale-x: 0.58;
+    -fx-scale-y: 0.58;
+}
+.rail-icon .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 2.0;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+.rail-item:hover .rail-icon .df-icon { -fx-stroke: -df-foreground; }
 
 .rail-toggle {
     -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 14px;
     -fx-padding: 6 10;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
     -fx-border-color: transparent;
     -fx-cursor: hand;
+    -fx-alignment: center;
 }
-.rail-toggle:hover {
-    -fx-background-color: -df-rail-hover;
-    -fx-text-fill: -df-foreground;
+.rail-toggle .df-icon-wrap { -fx-scale-x: 0.58; -fx-scale-y: 0.58; }
+.rail-toggle .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 2.0;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
 }
+.rail-toggle:hover { -fx-background-color: -df-rail-hover; }
+.rail-toggle:hover .df-icon { -fx-stroke: -df-foreground; }
 
 /* ── Sidebar (chat list panel) ── */
 
@@ -344,40 +402,46 @@
 }
 
 .sidebar-brand {
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 
 .sidebar-new-chat-btn {
     -fx-background-color: -df-primary;
-    -fx-text-fill: -df-primary-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: transparent;
     -fx-padding: 0;
-    -fx-font-size: 18px;
-    -fx-font-weight: 700;
     -fx-cursor: hand;
-    -fx-min-width: 32;
-    -fx-min-height: 32;
-    -fx-max-width: 32;
-    -fx-max-height: 32;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
     -fx-alignment: center;
 }
-.sidebar-new-chat-btn:hover { -fx-background-color: -df-primary-hover; }
+.sidebar-new-chat-btn .df-icon-wrap { -fx-scale-x: 0.62; -fx-scale-y: 0.62; }
+.sidebar-new-chat-btn .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-primary-foreground;
+    -fx-stroke-width: 2.2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+.sidebar-new-chat-btn:hover  { -fx-background-color: -df-primary-hover; }
+.sidebar-new-chat-btn:pressed{ -fx-background-color: -df-primary-press; }
 
 .sidebar-search-field {
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: -df-border;
-    -fx-padding: 8 12;
+    -fx-padding: 7 11;
     -fx-font-size: 12px;
 }
-.sidebar-search-field:focused { -fx-border-color: -df-ring; }
+.sidebar-search-field:focused { -fx-border-color: -df-ring; -fx-border-width: 1.5; -fx-padding: 6.5 10.5; }
 
 .sidebar-user-bar {
     -fx-background-color: transparent;
@@ -390,47 +454,47 @@
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
-
 .sidebar-status {
     -fx-font-size: 11px;
     -fx-text-fill: -df-muted-foreground;
 }
-
-.sidebar-presence-online { -fx-fill: -df-online; }
+.sidebar-presence-online  { -fx-fill: -df-online;  }
 .sidebar-presence-offline { -fx-fill: -df-offline; }
 
 .sidebar-settings-btn {
     -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
     -fx-border-color: transparent;
     -fx-padding: 6;
-    -fx-font-size: 14px;
     -fx-cursor: hand;
-    -fx-min-width: 32;
-    -fx-min-height: 32;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-alignment: center;
 }
-.sidebar-settings-btn:hover {
-    -fx-background-color: -df-accent;
-    -fx-text-fill: -df-foreground;
+.sidebar-settings-btn .df-icon-wrap { -fx-scale-x: 0.55; -fx-scale-y: 0.55; }
+.sidebar-settings-btn .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 2.0;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
 }
+.sidebar-settings-btn:hover { -fx-background-color: -df-accent; }
+.sidebar-settings-btn:hover .df-icon { -fx-stroke: -df-foreground; }
 
-/* ── Sidebar Settings Nav ── */
+/* ── Sidebar Settings nav ── */
 
-.settings-nav {
-    -fx-background-color: transparent;
-}
-
+.settings-nav { -fx-background-color: transparent; }
 .settings-nav-item {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
     -fx-alignment: CENTER_LEFT;
     -fx-content-display: LEFT;
-    -fx-graphic-text-gap: 12;
-    -fx-padding: 10 14;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-graphic-text-gap: 10;
+    -fx-padding: 8 12;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
     -fx-border-color: transparent;
     -fx-cursor: hand;
 }
@@ -439,27 +503,34 @@
     -fx-text-fill: -df-foreground;
 }
 .settings-nav-item-active {
-    -fx-background-color: -df-accent;
+    -fx-background-color: -df-primary-soft;
     -fx-text-fill: -df-foreground;
 }
-.settings-nav-icon {
-    -fx-font-size: 14px;
-    -fx-min-width: 22;
-    -fx-text-fill: inherit;
+.settings-nav-item-active .settings-nav-label { -fx-font-weight: 700; }
+.settings-nav-item-active .settings-nav-icon .df-icon { -fx-stroke: -df-primary; }
+.settings-nav-icon { -fx-alignment: center; }
+.settings-nav-icon .df-icon-wrap {
+    -fx-scale-x: 0.55;
+    -fx-scale-y: 0.55;
 }
+.settings-nav-icon .df-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -df-muted-foreground;
+    -fx-stroke-width: 2.0;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+.settings-nav-item:hover .settings-nav-icon .df-icon { -fx-stroke: -df-foreground; }
 .settings-nav-label {
     -fx-font-size: 13px;
     -fx-font-weight: 500;
     -fx-text-fill: inherit;
 }
-.settings-nav-item-active .settings-nav-label {
-    -fx-font-weight: 700;
-}
 
-/* ── Avatar ── */
+/* ── Avatar / presence ── */
 
 .avatar-clickable { -fx-cursor: hand; }
-.avatar-clickable:hover { -fx-opacity: 0.85; }
+.avatar-clickable:hover { -fx-opacity: 0.88; }
 
 .presence-dot-online {
     -fx-fill: -df-online;
@@ -472,27 +543,29 @@
     -fx-stroke-width: 2;
 }
 
-/* ── List Views ── */
+/* ── List Views (chats, users, members) ── */
 
 .list-view-clean {
     -fx-background-color: transparent;
-    -fx-padding: 4 8;
+    -fx-padding: 4 6;
     -fx-border-color: transparent;
 }
 .list-view-clean .list-cell {
     -fx-background-color: transparent;
     -fx-padding: 0;
     -fx-border-color: transparent;
-    -fx-background-radius: 8;
+    -fx-background-radius: 7;
 }
-.list-view-clean .list-cell:filled:hover { -fx-background-color: -df-accent; -fx-background-radius: 8; }
+.list-view-clean .list-cell:filled:hover {
+    -fx-background-color: -df-accent;
+    -fx-background-radius: 7;
+}
 .list-view-clean .list-cell:filled:selected {
-    -fx-background-color: -df-primary, -df-accent;
-    -fx-background-insets: 0, 0 0 0 3;
-    -fx-background-radius: 8;
+    -fx-background-color: -df-primary-soft;
+    -fx-background-radius: 7;
 }
 .list-view-clean .list-cell:empty { -fx-background-color: transparent; }
-.list-view-clean .list-cell:empty:hover { -fx-background-color: transparent; }
+.list-view-clean .list-cell:empty:hover    { -fx-background-color: transparent; }
 .list-view-clean .list-cell:empty:selected { -fx-background-color: transparent; }
 
 .chat-cell-name {
@@ -514,19 +587,18 @@
     -fx-font-size: 10px;
     -fx-font-weight: 700;
     -fx-padding: 2 7;
-    -fx-background-radius: 10;
+    -fx-background-radius: 999;
 }
 
 .user-cell-name {
     -fx-font-size: 13px;
-    -fx-font-weight: 500;
+    -fx-font-weight: 600;
     -fx-text-fill: -df-foreground;
 }
 .user-cell-sub {
     -fx-font-size: 11px;
     -fx-text-fill: -df-muted-foreground;
 }
-
 .user-cell-btn {
     -fx-background-color: transparent;
     -fx-text-fill: -df-primary;
@@ -535,12 +607,11 @@
     -fx-background-radius: 6;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
-    -fx-padding: 4 12;
+    -fx-padding: 4 10;
     -fx-cursor: hand;
 }
 .user-cell-btn:hover {
-    -fx-background-color: -df-primary;
-    -fx-text-fill: -df-primary-foreground;
+    -fx-background-color: -df-primary-soft;
     -fx-border-color: -df-primary;
 }
 
@@ -548,18 +619,18 @@
 
 .welcome-content { -fx-alignment: center; }
 .welcome-glyph {
-    -fx-font-size: 64px;
+    -fx-font-size: 56px;
     -fx-text-fill: -df-muted-foreground;
-    -fx-opacity: 0.6;
-    -fx-padding: 0 0 8 0;
+    -fx-opacity: 0.42;
+    -fx-padding: 0 0 6 0;
 }
 .welcome-title {
-    -fx-font-size: 28px;
+    -fx-font-size: 24px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
 .welcome-subtitle {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-text-fill: -df-muted-foreground;
 }
 
@@ -578,10 +649,11 @@
 }
 .settings-card {
     -fx-background-color: -df-card;
-    -fx-background-radius: 10;
+    -fx-background-radius: 9;
     -fx-border-color: -df-border;
-    -fx-border-radius: 10;
-    -fx-padding: 16;
+    -fx-border-width: 1;
+    -fx-border-radius: 9;
+    -fx-padding: 18;
 }
 .settings-label {
     -fx-font-size: 13px;
@@ -598,7 +670,7 @@
     -fx-text-fill: -df-muted-foreground;
 }
 
-/* ── Toggle Switch ── */
+/* ── Toggle Switch (ControlsFX) ── */
 
 .toggle-switch .thumb-area {
     -fx-background-color: -df-muted;
@@ -610,14 +682,15 @@
     -fx-background-color: -df-primary;
     -fx-border-color: -df-primary;
 }
-.toggle-switch .thumb { -fx-background-color: -df-foreground; }
+.toggle-switch .thumb { -fx-background-color: white; }
 
-/* ── Empty State ── */
+/* ── Empty state ── */
 
 .empty-state { -fx-alignment: center; }
 .empty-state-text {
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-text-fill: -df-muted-foreground;
+    -fx-text-alignment: center;
 }
 
 /* ── Modal Overlay / Dialogs ── */
@@ -628,18 +701,22 @@
 
 .modal-card {
     -fx-background-color: -df-card;
-    -fx-background-radius: 14;
+    -fx-background-radius: 12;
     -fx-border-color: -df-border;
-    -fx-border-radius: 14;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 24, 0.2, 0, 8);
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    /* Single shadow per dialog instance — kept for elevation. */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 26, 0.18, 0, 10);
+}
+.light-theme .modal-card {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 26, 0.16, 0, 10);
 }
 
 .modal-title {
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-font-weight: 700;
     -fx-text-fill: -df-foreground;
 }
-
 .modal-subtitle {
     -fx-font-size: 12px;
     -fx-text-fill: -df-muted-foreground;
@@ -648,8 +725,8 @@
 .modal-close-btn {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 14px;
-    -fx-padding: 4 10;
+    -fx-font-size: 13px;
+    -fx-padding: 4 9;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
     -fx-border-color: transparent;
@@ -668,9 +745,9 @@
 .modal-tab {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
     -fx-font-weight: 700;
-    -fx-padding: 10 14;
+    -fx-padding: 9 14;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-border-color: transparent;
@@ -687,7 +764,7 @@
     -fx-background-color: -df-accent;
     -fx-text-fill: -df-foreground;
     -fx-background-radius: 999;
-    -fx-padding: 4 10;
+    -fx-padding: 3 9;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
 }
@@ -709,15 +786,19 @@
 .update-dialog {
     -fx-background-color: -df-card;
     -fx-border-color: -df-border;
+    -fx-border-width: 1;
     -fx-border-radius: 12;
     -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 26, 0.18, 0, 10);
 }
 .update-notes {
     -fx-control-inner-background: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-border-color: -df-border;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-border-radius: 7;
+    -fx-background-radius: 7;
+    -fx-font-family: "Roboto Mono", "Consolas", monospace;
+    -fx-font-size: 12px;
 }
 
 /* ── Context Menu ── */
@@ -726,9 +807,9 @@
     -fx-background-color: -df-popover;
     -fx-background-radius: 8;
     -fx-border-color: -df-border;
+    -fx-border-width: 1;
     -fx-border-radius: 8;
     -fx-padding: 4;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 18, 0.15, 0, 6);
 }
 .menu-item { -fx-background-radius: 6; -fx-padding: 6 12; }
 .menu-item .label { -fx-text-fill: -df-foreground; -fx-font-size: 12px; }

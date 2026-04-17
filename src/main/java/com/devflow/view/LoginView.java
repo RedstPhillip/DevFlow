@@ -21,7 +21,7 @@ public class LoginView extends StackPane {
     public LoginView() {
         getStyleClass().add("login-root");
 
-        VBox card = new VBox(20);
+        VBox card = new VBox(18);
         card.getStyleClass().add("login-card");
         card.setMaxWidth(400);
         card.setAlignment(Pos.TOP_LEFT);
@@ -66,7 +66,7 @@ public class LoginView extends StackPane {
         footer.getStyleClass().add("login-footer");
 
         card.getChildren().addAll(title, subtitle, fields, errorLabel, buttons, footer);
-        card.setPadding(new Insets(32));
+        card.setPadding(new Insets(30, 28, 28, 28));
 
         setAlignment(Pos.CENTER);
         setPadding(new Insets(24));
