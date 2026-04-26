@@ -8,6 +8,9 @@ import java.util.List;
 public class Chat {
 
     public static final String TYPE_DM = "DM";
+    // TODO rename on the wire to "GROUP_CHAT" once the "Gruppe" (folder/workspace-group)
+    // concept is stable and we coordinate a client+server migration. Until then
+    // the serialized value stays "GROUP" to remain compatible with the existing backend.
     public static final String TYPE_GROUP = "GROUP";
 
     public static final String POLICY_OWNER_ONLY = "OWNER_ONLY";
@@ -22,6 +25,26 @@ public class Chat {
 
     @SerializedName(value = "memberAddPolicy", alternate = {"member_add_policy"})
     private String memberAddPolicy;
+
+    /**
+     * Workspace this GROUP chat belongs to. Populated by the backend from
+     * Phase 2b onward; {@code null} for DMs (the backend uses
+     * {@code @JsonInclude(NON_NULL)} so DM payloads omit the field entirely).
+     * Used client-side to filter the "Gruppenchats" section by the current
+     * workspace.
+     */
+    @SerializedName(value = "workspaceId", alternate = {"workspace_id"})
+    private Long workspaceId;
+
+    /**
+     * Workspace-group (folder) this GROUP chat is filed under. Populated by
+     * the backend from Phase 2c onward. {@code null} for DMs and also
+     * {@code null} for group chats sitting directly under the workspace —
+     * those render in the implicit "Allgemein" section of the sidebar. Pre-2c
+     * legacy chats always have this field null.
+     */
+    @SerializedName(value = "groupId", alternate = {"group_id"})
+    private Long groupId;
 
     @SerializedName(value = "createdAt", alternate = {"created_at"})
     private LocalDateTime createdAt;
@@ -48,6 +71,12 @@ public class Chat {
     public String getMemberAddPolicy() { return memberAddPolicy; }
     public void setMemberAddPolicy(String memberAddPolicy) { this.memberAddPolicy = memberAddPolicy; }
 
+    public Long getWorkspaceId() { return workspaceId; }
+    public void setWorkspaceId(Long workspaceId) { this.workspaceId = workspaceId; }
+
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -57,7 +86,7 @@ public class Chat {
     public Message getLastMessage() { return lastMessage; }
     public void setLastMessage(Message lastMessage) { this.lastMessage = lastMessage; }
 
-    public boolean isGroup() { return TYPE_GROUP.equalsIgnoreCase(type); }
+    public boolean isGroupChat() { return TYPE_GROUP.equalsIgnoreCase(type); }
 
     public User getOtherParticipant(long currentUserId) {
         if (participants == null) return null;
@@ -68,9 +97,9 @@ public class Chat {
     }
 
     public String getDisplayName(long currentUserId) {
-        if (isGroup()) {
+        if (isGroupChat()) {
             if (name != null && !name.isBlank()) return name;
-            if (participants == null || participants.isEmpty()) return "Gruppe";
+            if (participants == null || participants.isEmpty()) return "Gruppenchat";
             StringBuilder sb = new StringBuilder();
             int count = 0;
             for (User u : participants) {
@@ -89,7 +118,7 @@ public class Chat {
     }
 
     public boolean canAddMembers(long userId) {
-        if (!isGroup()) return false;
+        if (!isGroupChat()) return false;
         if (POLICY_ALL_MEMBERS.equalsIgnoreCase(memberAddPolicy)) return true;
         return ownerId != null && ownerId == userId;
     }
