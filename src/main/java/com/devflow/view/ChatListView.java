@@ -1,7 +1,9 @@
 package com.devflow.view;
 
 import com.devflow.model.Chat;
+import com.devflow.model.Group;
 import com.devflow.util.DateFormatter;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,78 +19,103 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
  * Sectioned chat list shown inside the sidebar.
  *
- * Layout is a single VBox stacked into a ScrollPane:
- *   [section header  Direktnachrichten  (chevron ▾)]
- *   [ ListView of DM chats                        ]
- *   [section header  Gruppen           (chevron ▾)]
- *   [ ListView of group chats                     ]
- *   [ empty-state label when both lists are empty ]
+ * <p>Since Phase 2c the structure is:
+ * <pre>
+ *   [section header  Direktnachrichten]
+ *   [ ListView of DM chats              ]
+ *   [section header  Gruppenchats]
+ *   [   sub-section  Allgemein     ]   ← chats with groupId = null
+ *   [   sub-section  &lt;Group A&gt;   ]   ← one per Group, ordered by sortOrder
+ *   [   sub-section  &lt;Group B&gt;   ]
+ *   [ empty-state label when everything empty ]
+ * </pre>
  *
- * Each section is collapsible via its header. The section headers mimic a
- * folder-style tree (VS Code's Explorer). Selection is unified across both
- * inner lists so only one chat is ever highlighted at a time.
+ * <p>The sub-section tree is rebuilt whenever {@link #setGroups(List)} fires
+ * (workspace switch or group CRUD) or when {@link #setChats(List)} re-partitions
+ * chats. "Allgemein" catches {@code groupId == null} and also any chat whose
+ * {@code groupId} points at a group that isn't in the current cache (stale
+ * references survive to the implicit bucket rather than vanishing).</p>
+ *
+ * <p>Selection is unified across the DM list and every sub-section list via a
+ * shared {@code suppressSelectionEvents} guard — exactly one chat is active
+ * across the whole tree.</p>
  */
 public class ChatListView extends StackPane {
 
-    private final ObservableList<Chat> dmChats   = FXCollections.observableArrayList();
-    private final ObservableList<Chat> groupChats = FXCollections.observableArrayList();
-    private final FilteredList<Chat> dmFiltered   = new FilteredList<>(dmChats, c -> true);
-    private final FilteredList<Chat> groupFiltered = new FilteredList<>(groupChats, c -> true);
+    /** Sentinel used as the bucket key for "Allgemein" (group_id = null). */
+    private static final long ALLGEMEIN_KEY = -1L;
 
-    private final ListView<Chat> dmList   = new ListView<>(dmFiltered);
-    private final ListView<Chat> groupList = new ListView<>(groupFiltered);
+    // ── DM section ────────────────────────────────────────────────────────
+    private final ObservableList<Chat> dmChats = FXCollections.observableArrayList();
+    private final FilteredList<Chat> dmFiltered = new FilteredList<>(dmChats, c -> true);
+    private final ListView<Chat> dmList = new ListView<>(dmFiltered);
+    private final Label dmCount = new Label();
+    // Phase 3 P1.3: chevrons migrated from unicode glyphs (▾/▸) to Feather
+    // FontIcons so they share -fx-icon-color with the rest of the icon set.
+    private final FontIcon dmChevron = new FontIcon(Feather.CHEVRON_DOWN);
 
-    private final Label dmCount    = new Label();
-    private final Label groupCount = new Label();
-    private final Label dmChevron  = new Label("\u25BE"); // ▾
-    private final Label groupChevron = new Label("\u25BE");
+    // ── Group-chats umbrella ──────────────────────────────────────────────
+    /** Raw un-partitioned list of all group chats from the last setChats(). */
+    private final List<Chat> allGroupChats = new ArrayList<>();
+    /** Snapshot of current workspace's groups (from GroupState). */
+    private List<Group> currentGroups = Collections.emptyList();
+    /** Host that contains the sub-section nodes in render order. */
+    private final VBox groupSectionsHost = new VBox();
+    /** Umbrella "Gruppenchats" outer section (header + groupSectionsHost). */
+    private final VBox groupChatsSection;
+    private final Label groupChatsCount = new Label();
+    private final FontIcon groupChatsChevron = new FontIcon(Feather.CHEVRON_DOWN);
+    /** Per-bucket cached sub-section state, keyed by group-id or ALLGEMEIN_KEY. */
+    private final Map<Long, SubSection> subSections = new LinkedHashMap<>();
 
-    private final VBox dmSection;
-    private final VBox groupSection;
     private final Label emptyLabel;
 
     private Consumer<Chat> onChatSelected;
     private long currentUserId;
     private String filterText = "";
+    /**
+     * Active workspace id. {@code 0} = bootstrap (no filter), {@code -1} =
+     * placeholder (hide all group chats), positive = filter to matching.
+     * DMs are workspace-agnostic and unaffected.
+     */
+    private long currentWorkspaceId = 0;
     private boolean suppressSelectionEvents = false;
     private boolean loaded = false;
 
     public ChatListView() {
         getStyleClass().add("chat-list-panel");
 
-        // DM section ────────────────────────────
+        // DM section
         Node dmHeader = buildSectionHeader("Direktnachrichten", dmChevron, dmCount,
-                () -> toggleSection(dmList, dmChevron));
+                () -> toggleListVisibility(dmList, dmChevron), false);
         dmList.getStyleClass().addAll("list-view-clean", "chat-list-inner");
         dmList.setCellFactory(lv -> new ChatListCell());
         dmList.setFocusTraversable(false);
-        bindUnifiedSelection(dmList, groupList);
-        dmList.prefHeightProperty().bind(
-                javafx.beans.binding.Bindings.size(dmFiltered).multiply(56));
+        bindListSelection(dmList);
+        dmList.prefHeightProperty().bind(Bindings.size(dmFiltered).multiply(56));
         dmList.managedProperty().bind(dmList.visibleProperty());
-        dmSection = new VBox(dmHeader, dmList);
+        VBox dmSection = new VBox(dmHeader, dmList);
 
-        // Group section ──────────────────────────
-        Node groupHeader = buildSectionHeader("Gruppen", groupChevron, groupCount,
-                () -> toggleSection(groupList, groupChevron));
-        groupList.getStyleClass().addAll("list-view-clean", "chat-list-inner");
-        groupList.setCellFactory(lv -> new ChatListCell());
-        groupList.setFocusTraversable(false);
-        bindUnifiedSelection(groupList, dmList);
-        groupList.prefHeightProperty().bind(
-                javafx.beans.binding.Bindings.size(groupFiltered).multiply(56));
-        groupList.managedProperty().bind(groupList.visibleProperty());
-        groupSection = new VBox(groupHeader, groupList);
+        // Group-chats umbrella
+        Node groupChatsHeader = buildSectionHeader("Gruppenchats", groupChatsChevron, groupChatsCount,
+                () -> toggleNodeVisibility(groupSectionsHost, groupChatsChevron), false);
+        groupSectionsHost.managedProperty().bind(groupSectionsHost.visibleProperty());
+        groupChatsSection = new VBox(groupChatsHeader, groupSectionsHost);
 
-        VBox content = new VBox(dmSection, groupSection);
+        VBox content = new VBox(dmSection, groupChatsSection);
         content.getStyleClass().add("chat-list-content");
 
         ScrollPane scroll = new ScrollPane(content);
@@ -96,107 +123,145 @@ public class ChatListView extends StackPane {
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.getStyleClass().add("chat-list-scroll");
 
-        // Empty state shown when both sections are empty.
+        // Phase 3 P2: same EmptyState language as the welcome panel and the
+        // chat-view "no messages yet" placeholder — large muted glyph + text.
+        // We keep the Label as a field because setChats()/setFilter() still
+        // rewrite the title between "Loading", "No chats yet", and "No matches"
+        // states; the icon stays MESSAGE_SQUARE in all of them.
         emptyLabel = new Label("Lade Unterhaltungen \u2026");
-        emptyLabel.getStyleClass().add("empty-state-text");
-        StackPane emptyState = new StackPane(emptyLabel);
-        emptyState.getStyleClass().add("empty-state");
-        emptyState.setPadding(new Insets(40));
+        emptyLabel.getStyleClass().add("empty-state-title");
+        emptyLabel.setWrapText(true);
+        FontIcon emptyGlyph = new FontIcon(Feather.INBOX);
+        emptyGlyph.getStyleClass().add("empty-state-glyph");
+        StackPane glyphHost = new StackPane(emptyGlyph);
+        glyphHost.getStyleClass().add("empty-state-glyph-host");
+        VBox emptyState = new VBox(10, glyphHost, emptyLabel);
+        emptyState.getStyleClass().addAll("empty-state", "empty-state-card");
+        emptyState.setAlignment(Pos.CENTER);
+        emptyState.setPadding(new Insets(28, 24, 28, 24));
         emptyState.visibleProperty().bind(
-                javafx.beans.binding.Bindings.isEmpty(dmFiltered)
-                        .and(javafx.beans.binding.Bindings.isEmpty(groupFiltered)));
+                Bindings.size(dmFiltered).isEqualTo(0)
+                        .and(Bindings.createBooleanBinding(this::isAllGroupSubSectionsEmpty,
+                                // Re-evaluate whenever any bucket list changes. Instead of
+                                // binding explicit deps (which would require rebuilding on
+                                // group change), we piggy-back on groupChatsCount which we
+                                // refresh after every partition/rebuild.
+                                groupChatsCount.textProperty())));
         emptyState.managedProperty().bind(emptyState.visibleProperty());
 
         getChildren().addAll(scroll, emptyState);
+
+        // Seed an initial (empty) render so the "Gruppenchats" section is
+        // well-formed before the first setChats()/setGroups() lands.
+        rebuildGroupSections();
     }
 
-    private HBox buildSectionHeader(String title, Label chevron, Label count, Runnable onToggle) {
+    // ── Section header factory ─────────────────────────────────────────────
+
+    private HBox buildSectionHeader(String title, FontIcon chevron, Label count, Runnable onToggle, boolean sub) {
         Label name = new Label(title);
-        name.getStyleClass().add("chat-list-section-title");
+        name.getStyleClass().add(sub ? "chat-list-subsection-title" : "chat-list-section-title");
         chevron.getStyleClass().add("chat-list-section-chevron");
         count.getStyleClass().add("chat-list-section-count");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox header = new HBox(6, chevron, name, spacer, count);
-        header.getStyleClass().add("chat-list-section-header");
+        header.getStyleClass().add(sub ? "chat-list-subsection-header" : "chat-list-section-header");
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(6, 12, 6, 10));
+        // Sub-sections get extra left padding so the chevron aligns under the
+        // umbrella's title text — reads as a tree in a single glance.
+        header.setPadding(sub ? new Insets(4, 12, 4, 22) : new Insets(6, 12, 6, 10));
         header.setOnMouseClicked(e -> onToggle.run());
         return header;
     }
 
-    private void toggleSection(ListView<?> list, Label chevron) {
+    private void toggleListVisibility(ListView<?> list, FontIcon chevron) {
         boolean nowVisible = !list.isVisible();
         list.setVisible(nowVisible);
-        chevron.setText(nowVisible ? "\u25BE" : "\u25B8"); // ▾ expanded, ▸ collapsed
+        chevron.setIconCode(nowVisible ? Feather.CHEVRON_DOWN : Feather.CHEVRON_RIGHT);
     }
 
-    /** Selecting in one inner list clears selection in the other, so at most one chat is active. */
-    private void bindUnifiedSelection(ListView<Chat> own, ListView<Chat> peer) {
-        own.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+    private void toggleNodeVisibility(Node node, FontIcon chevron) {
+        boolean nowVisible = !node.isVisible();
+        node.setVisible(nowVisible);
+        chevron.setIconCode(nowVisible ? Feather.CHEVRON_DOWN : Feather.CHEVRON_RIGHT);
+    }
+
+    /** Hook every list's selection into the unified callback + peer clearing. */
+    private void bindListSelection(ListView<Chat> list) {
+        list.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
             if (suppressSelectionEvents) return;
-            if (selected != null) {
-                if (peer.getSelectionModel().getSelectedItem() != null) {
-                    suppressSelectionEvents = true;
-                    try { peer.getSelectionModel().clearSelection(); }
-                    finally { suppressSelectionEvents = false; }
+            if (selected == null) return;
+            // Clear selection on every other list so at most one row is active.
+            suppressSelectionEvents = true;
+            try {
+                if (dmList != list) dmList.getSelectionModel().clearSelection();
+                for (SubSection s : subSections.values()) {
+                    if (s.list != list) s.list.getSelectionModel().clearSelection();
                 }
-                if (onChatSelected != null) onChatSelected.accept(selected);
+            } finally {
+                suppressSelectionEvents = false;
             }
+            if (onChatSelected != null) onChatSelected.accept(selected);
         });
     }
 
+    // ── Public API ─────────────────────────────────────────────────────────
+
     public void setChats(List<Chat> chatList) {
-        // Remember current selection so we can restore across a refresh.
-        Chat selectedDm    = dmList.getSelectionModel().getSelectedItem();
-        Chat selectedGroup = groupList.getSelectionModel().getSelectedItem();
-        Chat previouslySelected = selectedDm != null ? selectedDm : selectedGroup;
+        // Remember current selection (across all lists) so we can restore it.
+        Chat previouslySelected = currentSelection();
 
         List<Chat> dms = new ArrayList<>();
-        List<Chat> groups = new ArrayList<>();
+        allGroupChats.clear();
         for (Chat c : chatList) {
-            if (c.isGroup()) groups.add(c); else dms.add(c);
+            if (c.isGroupChat()) allGroupChats.add(c);
+            else dms.add(c);
         }
 
         suppressSelectionEvents = true;
         try {
             dmChats.setAll(dms);
-            groupChats.setAll(groups);
-            if (previouslySelected != null) {
-                if (previouslySelected.isGroup()) {
-                    for (Chat c : groups) {
-                        if (c.getId() == previouslySelected.getId()) {
-                            groupList.getSelectionModel().select(c);
-                            break;
-                        }
-                    }
-                } else {
-                    for (Chat c : dms) {
-                        if (c.getId() == previouslySelected.getId()) {
-                            dmList.getSelectionModel().select(c);
-                            break;
-                        }
-                    }
-                }
-            }
+            repartitionGroupChats();
+            restoreSelection(previouslySelected);
         } finally {
             suppressSelectionEvents = false;
         }
 
-        dmCount.setText(String.valueOf(dms.size()));
-        groupCount.setText(String.valueOf(groups.size()));
-
+        refreshCounts();
         loaded = true;
         emptyLabel.setText(filterText.isEmpty()
                 ? "Noch keine Unterhaltungen.\nKlicke + um eine neue zu starten."
                 : "Keine Treffer.");
     }
 
+    /**
+     * Push a new groups snapshot. Rebuilds the sub-section tree, preserving
+     * existing sub-sections (so collapse state survives across refreshes) and
+     * dropping any whose group no longer exists. Called by ChatListController
+     * on GroupState changes.
+     */
+    public void setGroups(List<Group> groups) {
+        this.currentGroups = groups != null ? groups : Collections.emptyList();
+        Chat previouslySelected = currentSelection();
+        suppressSelectionEvents = true;
+        try {
+            rebuildGroupSections();
+            repartitionGroupChats();
+            restoreSelection(previouslySelected);
+        } finally {
+            suppressSelectionEvents = false;
+        }
+        refreshCounts();
+    }
+
     public void clearSelection() {
         suppressSelectionEvents = true;
         try {
             dmList.getSelectionModel().clearSelection();
-            groupList.getSelectionModel().clearSelection();
+            for (SubSection s : subSections.values()) {
+                s.list.getSelectionModel().clearSelection();
+            }
         } finally {
             suppressSelectionEvents = false;
         }
@@ -204,20 +269,17 @@ public class ChatListView extends StackPane {
 
     public void setFilter(String text) {
         this.filterText = text == null ? "" : text.trim().toLowerCase();
-        if (filterText.isEmpty()) {
-            dmFiltered.setPredicate(c -> true);
-            groupFiltered.setPredicate(c -> true);
-        } else {
-            dmFiltered.setPredicate(c ->
-                    c.getDisplayName(currentUserId).toLowerCase().contains(filterText));
-            groupFiltered.setPredicate(c ->
-                    c.getDisplayName(currentUserId).toLowerCase().contains(filterText));
-        }
+        applyPredicates();
         if (loaded) {
             emptyLabel.setText(filterText.isEmpty()
                     ? "Noch keine Unterhaltungen.\nKlicke + um eine neue zu starten."
                     : "Keine Treffer.");
         }
+    }
+
+    public void setCurrentWorkspaceId(long workspaceId) {
+        this.currentWorkspaceId = workspaceId;
+        applyPredicates();
     }
 
     public void setOnChatSelected(Consumer<Chat> handler) {
@@ -226,6 +288,173 @@ public class ChatListView extends StackPane {
 
     public void setCurrentUserId(long userId) {
         this.currentUserId = userId;
+    }
+
+    // ── Internals ──────────────────────────────────────────────────────────
+
+    /**
+     * Rebuild the ordered list of sub-sections to match current groups.
+     * Existing sub-sections are reused (preserves their expanded state); any
+     * section whose key is no longer needed is removed.
+     */
+    private void rebuildGroupSections() {
+        // Desired order: Allgemein first, then each group by its position in
+        // the currentGroups list (already sorted server-side by sort_order).
+        List<Long> desiredKeys = new ArrayList<>();
+        desiredKeys.add(ALLGEMEIN_KEY);
+        for (Group g : currentGroups) desiredKeys.add(g.getId());
+
+        // Drop sub-sections that are no longer in the desired set.
+        subSections.keySet().retainAll(desiredKeys);
+
+        // Add any missing sub-sections. Ordering is enforced below when we
+        // repopulate groupSectionsHost's children list.
+        for (Long key : desiredKeys) {
+            subSections.computeIfAbsent(key, this::createSubSection);
+        }
+
+        // Repopulate host in desired order. For each sub-section we add its
+        // header, then its list view.
+        groupSectionsHost.getChildren().clear();
+        for (Long key : desiredKeys) {
+            SubSection s = subSections.get(key);
+            s.label.setText(labelFor(key));
+            groupSectionsHost.getChildren().add(s.container);
+        }
+    }
+
+    private String labelFor(long key) {
+        if (key == ALLGEMEIN_KEY) return "Allgemein";
+        for (Group g : currentGroups) if (g.getId() == key) return g.getName();
+        // Stale key that slipped through — render neutral rather than crash.
+        return "Gruppe";
+    }
+
+    private SubSection createSubSection(Long key) {
+        SubSection s = new SubSection();
+        s.chats = FXCollections.observableArrayList();
+        s.filtered = new FilteredList<>(s.chats, c -> matchesText(c) && matchesWorkspace(c));
+        s.list = new ListView<>(s.filtered);
+        s.list.getStyleClass().addAll("list-view-clean", "chat-list-inner");
+        s.list.setCellFactory(lv -> new ChatListCell());
+        s.list.setFocusTraversable(false);
+        s.list.prefHeightProperty().bind(Bindings.size(s.filtered).multiply(56));
+        s.list.managedProperty().bind(s.list.visibleProperty());
+        bindListSelection(s.list);
+
+        s.chevron = new FontIcon(Feather.CHEVRON_DOWN);
+        s.count = new Label();
+        s.label = new Label();
+        s.label.getStyleClass().add("chat-list-subsection-title");
+        s.chevron.getStyleClass().add("chat-list-section-chevron");
+        s.count.getStyleClass().add("chat-list-section-count");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(6, s.chevron, s.label, spacer, s.count);
+        header.getStyleClass().add("chat-list-subsection-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+        // Polish-Pass §4: sub-section row height ≈ 28 (was ≈ 24).
+        header.setPadding(new Insets(6, 12, 6, 22));
+        header.setOnMouseClicked(e -> toggleListVisibility(s.list, s.chevron));
+
+        // Hide the entire sub-section when it has no chats matching the
+        // current filter. Otherwise we'd show "Frontend (0)" for every group
+        // that happens to be empty, creating a lot of noise in tree form.
+        s.container = new VBox(header, s.list);
+        s.container.visibleProperty().bind(Bindings.size(s.filtered).greaterThan(0));
+        s.container.managedProperty().bind(s.container.visibleProperty());
+        return s;
+    }
+
+    /** Re-bucket {@link #allGroupChats} into per-group lists. */
+    private void repartitionGroupChats() {
+        // Clear existing buckets first — setChats may have shuffled items
+        // between groups (e.g. a chat was moved to a different folder).
+        for (SubSection s : subSections.values()) s.chats.clear();
+
+        for (Chat c : allGroupChats) {
+            Long gid = c.getGroupId();
+            long key = (gid == null) ? ALLGEMEIN_KEY : gid;
+            SubSection s = subSections.get(key);
+            if (s == null) {
+                // groupId references a group not in the current cache (deleted
+                // or not yet loaded) — fall back to Allgemein so the chat is
+                // still reachable.
+                s = subSections.get(ALLGEMEIN_KEY);
+            }
+            if (s != null) s.chats.add(c);
+        }
+    }
+
+    private void applyPredicates() {
+        dmFiltered.setPredicate(this::matchesText);
+        for (SubSection s : subSections.values()) {
+            s.filtered.setPredicate(c -> matchesText(c) && matchesWorkspace(c));
+        }
+        refreshCounts();
+    }
+
+    private void refreshCounts() {
+        dmCount.setText(String.valueOf(dmFiltered.size()));
+        int total = 0;
+        for (SubSection s : subSections.values()) {
+            int n = s.filtered.size();
+            s.count.setText(String.valueOf(n));
+            total += n;
+        }
+        groupChatsCount.setText(String.valueOf(total));
+    }
+
+    private boolean matchesText(Chat c) {
+        if (filterText.isEmpty()) return true;
+        return c.getDisplayName(currentUserId).toLowerCase().contains(filterText);
+    }
+
+    private boolean matchesWorkspace(Chat c) {
+        if (currentWorkspaceId == 0) return true;
+        if (currentWorkspaceId < 0) return false;
+        Long wsId = c.getWorkspaceId();
+        if (wsId == null) return true;
+        return wsId == currentWorkspaceId;
+    }
+
+    private Chat currentSelection() {
+        Chat sel = dmList.getSelectionModel().getSelectedItem();
+        if (sel != null) return sel;
+        for (SubSection s : subSections.values()) {
+            Chat c = s.list.getSelectionModel().getSelectedItem();
+            if (c != null) return c;
+        }
+        return null;
+    }
+
+    private void restoreSelection(Chat previouslySelected) {
+        if (previouslySelected == null) return;
+        long id = previouslySelected.getId();
+        if (previouslySelected.isGroupChat()) {
+            for (SubSection s : subSections.values()) {
+                for (Chat c : s.chats) {
+                    if (c.getId() == id) {
+                        s.list.getSelectionModel().select(c);
+                        return;
+                    }
+                }
+            }
+        } else {
+            for (Chat c : dmChats) {
+                if (c.getId() == id) {
+                    dmList.getSelectionModel().select(c);
+                    return;
+                }
+            }
+        }
+    }
+
+    private boolean isAllGroupSubSectionsEmpty() {
+        for (SubSection s : subSections.values()) {
+            if (!s.filtered.isEmpty()) return false;
+        }
+        return true;
     }
 
     /** Truncate at the last whitespace boundary inside maxLen so we never split words mid-character. */
@@ -238,48 +467,81 @@ public class ChatListView extends StackPane {
         return flat.substring(0, cut) + "\u2026";
     }
 
+    // ── Helper types ───────────────────────────────────────────────────────
+
+    /** Per-bucket state. Grouped into a tiny class so the map stays readable. */
+    private static class SubSection {
+        VBox container;
+        Label label;
+        FontIcon chevron;
+        Label count;
+        ObservableList<Chat> chats;
+        FilteredList<Chat> filtered;
+        ListView<Chat> list;
+    }
+
+    /**
+     * Recyclable cell renderer.
+     *
+     * <p>Earlier versions allocated a fresh node tree (Avatar + 3 labels +
+     * VBox + HBox) on every {@code updateItem} call. JavaFX recycles
+     * ListCell instances aggressively while scrolling — for a list of N
+     * chats only a handful of cells actually exist physically — so the old
+     * code threw away dozens of node sub-trees per scroll tick. That
+     * thrashed the GC, occasionally caused styling flicker (newly-built
+     * labels start without their CSS pseudo-classes applied), and made
+     * scrolling visibly stutter on slower machines.</p>
+     *
+     * <p>Now the entire node graph is built once in the constructor and
+     * {@code updateItem} only mutates text + avatar identity. Recycle-safe.</p>
+     */
     private class ChatListCell extends ListCell<Chat> {
+        private final Avatar avatar = new Avatar("?", 36);
+        private final Label nameLabel = new Label();
+        private final Label previewLabel = new Label();
+        private final Label timeLabel = new Label();
+        private final HBox row;
+
+        ChatListCell() {
+            nameLabel.getStyleClass().add("chat-cell-name");
+            previewLabel.getStyleClass().add("chat-cell-preview");
+            timeLabel.getStyleClass().add("chat-cell-time");
+            VBox textBox = new VBox(2, nameLabel, previewLabel);
+            textBox.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(textBox, Priority.ALWAYS);
+            row = new HBox(10, avatar, textBox, timeLabel);
+            row.setAlignment(Pos.CENTER_LEFT);
+            // Cells inside a sub-section get extra left padding so they read
+            // as the third level of a VS Code-style tree.
+            row.setPadding(new Insets(7, 12, 7, 32));
+        }
+
         @Override
         protected void updateItem(Chat chat, boolean empty) {
             super.updateItem(chat, empty);
             if (empty || chat == null) {
+                // Clear the graphic AND wipe text on the cached labels —
+                // otherwise a stale name briefly flashes when the cell
+                // recycles for a different (or null) row before the next
+                // updateItem fires with real data.
                 setGraphic(null);
                 setText(null);
+                nameLabel.setText("");
+                previewLabel.setText("");
+                timeLabel.setText("");
                 return;
             }
-
             String name = chat.getDisplayName(currentUserId);
-
-            Avatar avatar = new Avatar(chat.isGroup() ? "# " + name : name, 36);
-
-            Label nameLabel = new Label(name);
-            nameLabel.getStyleClass().add("chat-cell-name");
-
-            Label previewLabel = new Label();
-            previewLabel.getStyleClass().add("chat-cell-preview");
+            avatar.setName(chat.isGroupChat() ? "# " + name : name);
+            nameLabel.setText(name);
             if (chat.getLastMessage() != null) {
                 previewLabel.setText(truncatePreview(chat.getLastMessage().getContent(), 38));
+                timeLabel.setText(DateFormatter.formatRelative(chat.getLastMessage().getCreatedAt()));
             } else {
                 previewLabel.setText("Noch keine Nachrichten");
+                timeLabel.setText("");
             }
-
-            VBox textBox = new VBox(2, nameLabel, previewLabel);
-            textBox.setAlignment(Pos.CENTER_LEFT);
-            HBox.setHgrow(textBox, Priority.ALWAYS);
-
-            Label timeLabel = new Label();
-            timeLabel.getStyleClass().add("chat-cell-time");
-            if (chat.getLastMessage() != null) {
-                timeLabel.setText(DateFormatter.formatRelative(chat.getLastMessage().getCreatedAt()));
-            }
-
-            HBox cell = new HBox(10, avatar, textBox, timeLabel);
-            cell.setAlignment(Pos.CENTER_LEFT);
-            // Cells already live inside a tree-like section; left-padding mimics
-            // the indentation of a child row in a VS Code-style explorer.
-            cell.setPadding(new Insets(7, 12, 7, 22));
-
-            setGraphic(cell);
+            setGraphic(row);
             setText(null);
         }
     }

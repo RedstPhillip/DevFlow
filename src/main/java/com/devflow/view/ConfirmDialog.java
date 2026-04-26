@@ -1,5 +1,6 @@
 package com.devflow.view;
 
+import atlantafx.base.theme.Styles;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -16,12 +17,12 @@ import javafx.scene.layout.VBox;
  *
  * <pre>
  * new ConfirmDialog(host, blurTarget,
- *         "Gruppe aufl\u00f6sen?",
- *         "Diese Aktion l\u00f6scht die Gruppe f\u00fcr alle Mitglieder. Sie kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
+ *         "Gruppenchat aufl\u00f6sen?",
+ *         "Diese Aktion l\u00f6scht den Gruppenchat f\u00fcr alle Mitglieder. Sie kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
  *         "Aufl\u00f6sen", true, this::doLeave).show();
  * </pre>
  *
- * Used by group settings today; will be reused by file-delete / repo-disconnect
+ * Used by group-chat settings today; will be reused by file-delete / repo-disconnect
  * actions in later modules.
  */
 public class ConfirmDialog extends VBox {
@@ -33,27 +34,30 @@ public class ConfirmDialog extends VBox {
                          String confirmLabel, boolean destructive,
                          Runnable onConfirm) {
         getStyleClass().add("modal-card");
-        setMaxWidth(420);
-        setPadding(new Insets(22, 24, 18, 24));
-        setSpacing(14);
+        // Phase 4 Q11 + Polish-Pass §4: narrow 400 (Yes/No only), padding 28.
+        setMaxWidth(400);
+        setPadding(new Insets(28));
+        setSpacing(16);
 
         Label titleLbl = new Label(title);
-        titleLbl.getStyleClass().add("modal-title");
+        // AtlantaFX TITLE_4/TEXT_BOLD stay; .t-card-title overrides their
+        // sizing per Phase 4 spec (14/600 instead of 16/normal).
+        titleLbl.getStyleClass().addAll("modal-title", "t-card-title", Styles.TITLE_4, Styles.TEXT_BOLD);
 
         Label msgLbl = new Label(message);
-        msgLbl.getStyleClass().add("modal-subtitle");
+        msgLbl.getStyleClass().addAll("modal-subtitle", "t-body", Styles.TEXT_MUTED);
         msgLbl.setWrapText(true);
 
         Button cancel = new Button("Abbrechen");
-        cancel.getStyleClass().add("button-secondary");
+        cancel.getStyleClass().add("button-flat");
 
         Button confirm = new Button(confirmLabel);
-        confirm.getStyleClass().add(destructive ? "button-destructive" : "button-primary");
+        confirm.getStyleClass().addAll(destructive ? "button-destructive" : "button-primary", "button-large");
         confirm.setDefaultButton(!destructive);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox footer = new HBox(10, spacer, cancel, confirm);
+        HBox footer = new HBox(8, spacer, cancel, confirm);
         footer.setAlignment(Pos.CENTER_RIGHT);
 
         getChildren().addAll(titleLbl, msgLbl, footer);

@@ -1,5 +1,6 @@
 package com.devflow.view;
 
+import atlantafx.base.theme.Styles;
 import com.devflow.model.Chat;
 import com.devflow.model.User;
 import com.devflow.service.ChatService;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class GroupSettingsDialog extends VBox {
+public class GroupChatSettingsDialog extends VBox {
 
     private final ModalOverlay overlay;
     private final ChatService chatService;
@@ -49,9 +50,9 @@ public class GroupSettingsDialog extends VBox {
     private final Button leaveBtn;
     private final Label statusLabel;
 
-    public GroupSettingsDialog(StackPane host, Node blurTarget,
-                               ChatService chatService, UserService userService,
-                               Chat chat, long currentUserId, Consumer<Chat> onChanged) {
+    public GroupChatSettingsDialog(StackPane host, Node blurTarget,
+                                   ChatService chatService, UserService userService,
+                                   Chat chat, long currentUserId, Consumer<Chat> onChanged) {
         this.chatService = chatService;
         this.userService = userService;
         this.chat = chat;
@@ -61,14 +62,14 @@ public class GroupSettingsDialog extends VBox {
         this.blurTarget = blurTarget;
 
         getStyleClass().add("modal-card");
-        setMaxWidth(520);
-        setPadding(new Insets(20, 22, 18, 22));
-        setSpacing(14);
+        // Phase 4 §8 + Polish-Pass §4: complex-modal width 560, padding 28, spacing 16.
+        setMaxWidth(560);
+        setPadding(new Insets(28));
+        setSpacing(16);
 
-        Label title = new Label("Gruppen-Einstellungen");
-        title.getStyleClass().add("modal-title");
-        Button closeBtn = new Button("\u2715");
-        closeBtn.getStyleClass().add("modal-close-btn");
+        Label title = new Label("Gruppenchat-Einstellungen");
+        title.getStyleClass().addAll("modal-title", "t-card-title", Styles.TITLE_4, Styles.TEXT_BOLD);
+        ModalCloseButton closeBtn = new ModalCloseButton(null); // wired below once overlay exists
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
         HBox header = new HBox(10, title, sp, closeBtn);
@@ -78,13 +79,14 @@ public class GroupSettingsDialog extends VBox {
 
         // Name
         Label nameLbl = new Label("Name");
-        nameLbl.getStyleClass().add("settings-label");
+        nameLbl.getStyleClass().addAll("settings-label", "t-body-strong");
         nameField = new TextField(chat.getName() == null ? "" : chat.getName());
+        nameField.getStyleClass().addAll("text-field", "t-input");
         nameField.setDisable(!isOwner);
 
         // Policy
         Label policyLbl = new Label("Wer kann Mitglieder hinzufügen?");
-        policyLbl.getStyleClass().add("settings-label");
+        policyLbl.getStyleClass().addAll("settings-label", "t-body-strong");
         policyChoice = new ChoiceBox<>();
         policyChoice.getItems().addAll("Nur Ersteller", "Alle Mitglieder");
         policyChoice.getSelectionModel().select(Chat.POLICY_ALL_MEMBERS.equalsIgnoreCase(chat.getMemberAddPolicy()) ? 1 : 0);
@@ -92,7 +94,7 @@ public class GroupSettingsDialog extends VBox {
 
         // Members
         Label membersLbl = new Label("Mitglieder (" + (chat.getParticipants() == null ? 0 : chat.getParticipants().size()) + ")");
-        membersLbl.getStyleClass().add("settings-label");
+        membersLbl.getStyleClass().addAll("settings-label", "t-body-strong");
 
         memberList = new ListView<>(members);
         memberList.getStyleClass().add("list-view-clean");
@@ -100,7 +102,11 @@ public class GroupSettingsDialog extends VBox {
         memberList.setCellFactory(lv -> new MemberCell());
         if (chat.getParticipants() != null) members.setAll(chat.getParticipants());
 
-        addMemberBtn = new Button("+ Mitglied hinzufügen");
+        // Phase 3 P4: Add-Member uses the user-plus glyph + label so the
+        // affordance is recognisable at a glance even before reading the text.
+        org.kordamp.ikonli.javafx.FontIcon userPlusIcon =
+                new org.kordamp.ikonli.javafx.FontIcon(org.kordamp.ikonli.feather.Feather.USER_PLUS);
+        addMemberBtn = new Button("Mitglied hinzufügen", userPlusIcon);
         addMemberBtn.getStyleClass().add("button-secondary");
         boolean canAdd = chat.canAddMembers(currentUserId);
         addMemberBtn.setDisable(!canAdd);
@@ -112,20 +118,21 @@ public class GroupSettingsDialog extends VBox {
 
         // Footer
         saveBtn = new Button("Änderungen speichern");
-        saveBtn.getStyleClass().add("button-primary");
+        saveBtn.getStyleClass().addAll("button-primary", "button-large");
         saveBtn.setDisable(!isOwner);
         saveBtn.setOnAction(e -> save());
 
-        leaveBtn = new Button(isOwner ? "Gruppe auflösen" : "Gruppe verlassen");
+        leaveBtn = new Button(isOwner ? "Gruppenchat auflösen" : "Gruppenchat verlassen");
         leaveBtn.getStyleClass().add("button-destructive");
         leaveBtn.setOnAction(e -> confirmLeave(isOwner));
 
         statusLabel = new Label("");
-        statusLabel.getStyleClass().add("modal-subtitle");
+        statusLabel.getStyleClass().addAll("modal-subtitle", "t-caption", Styles.TEXT_MUTED);
 
         Region fSp = new Region();
         HBox.setHgrow(fSp, Priority.ALWAYS);
-        HBox footer = new HBox(10, leaveBtn, fSp, statusLabel, saveBtn);
+        // Phase 4 §8: destructive (leave/dissolve) on the left, primary (save) on the right.
+        HBox footer = new HBox(8, leaveBtn, fSp, statusLabel, saveBtn);
         footer.setAlignment(Pos.CENTER_LEFT);
 
         getChildren().addAll(header, nameLbl, nameField, policyLbl, policyChoice,
@@ -142,7 +149,7 @@ public class GroupSettingsDialog extends VBox {
         String name = nameField.getText().trim();
         String policy = policyChoice.getSelectionModel().getSelectedIndex() == 1
                 ? Chat.POLICY_ALL_MEMBERS : Chat.POLICY_OWNER_ONLY;
-        chatService.updateGroup(chat.getId(), name, policy)
+        chatService.updateGroupChat(chat.getId(), name, policy)
                 .thenAcceptAsync(updated -> {
                     chat = updated;
                     onChanged.accept(updated);
@@ -159,17 +166,17 @@ public class GroupSettingsDialog extends VBox {
     }
 
     private void confirmLeave(boolean isOwner) {
-        String title = isOwner ? "Gruppe auflösen?" : "Gruppe verlassen?";
+        String title = isOwner ? "Gruppenchat auflösen?" : "Gruppenchat verlassen?";
         String msg = isOwner
-                ? "Diese Aktion löscht die Gruppe für alle Mitglieder. Sie kann nicht rückgängig gemacht werden."
-                : "Du verlierst den Zugriff auf bisherige Nachrichten dieser Gruppe.";
+                ? "Diese Aktion löscht den Gruppenchat für alle Mitglieder. Sie kann nicht rückgängig gemacht werden."
+                : "Du verlierst den Zugriff auf bisherige Nachrichten dieses Gruppenchats.";
         String ok = isOwner ? "Auflösen" : "Verlassen";
         new ConfirmDialog(host, blurTarget, title, msg, ok, true, this::leave).show();
     }
 
     private void leave() {
         leaveBtn.setDisable(true);
-        chatService.leaveGroup(chat.getId())
+        chatService.leaveGroupChat(chat.getId())
                 .thenRunAsync(() -> {
                     onChanged.accept(null);
                     overlay.close();
@@ -260,14 +267,14 @@ public class GroupSettingsDialog extends VBox {
         AddMemberPicker(StackPane host, Node blurTarget, UserService userService,
                         Set<Long> existingIds, Consumer<User> onPick) {
             getStyleClass().add("modal-card");
-            setMaxWidth(420);
-            setPadding(new Insets(18));
-            setSpacing(12);
+            // Phase 4 §8 + Polish-Pass §4: width 480, padding 28, spacing 16.
+            setMaxWidth(480);
+            setPadding(new Insets(28));
+            setSpacing(16);
 
             Label title = new Label("Mitglied hinzufügen");
-            title.getStyleClass().add("modal-title");
-            Button close = new Button("\u2715");
-            close.getStyleClass().add("modal-close-btn");
+            title.getStyleClass().addAll("modal-title", "t-card-title", Styles.TITLE_4, Styles.TEXT_BOLD);
+            ModalCloseButton close = new ModalCloseButton(null); // wired below
             Region sp = new Region();
             HBox.setHgrow(sp, Priority.ALWAYS);
             HBox header = new HBox(10, title, sp, close);
