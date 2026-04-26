@@ -27,46 +27,47 @@ public class LoginView extends StackPane {
         card.setAlignment(Pos.TOP_LEFT);
 
         Label title = new Label("Willkommen bei DevFlow");
-        title.getStyleClass().add("login-title");
+        title.getStyleClass().addAll("login-title", "t-page-title");
 
         Label subtitle = new Label("Melde dich an oder erstelle einen neuen Account, um mit deinem Team zu chatten.");
-        subtitle.getStyleClass().add("login-subtitle");
+        subtitle.getStyleClass().addAll("login-subtitle", "t-body");
         subtitle.setWrapText(true);
 
         usernameField = new TextField();
         usernameField.setPromptText("Benutzername");
-        usernameField.getStyleClass().add("login-field");
+        usernameField.getStyleClass().addAll("login-field", "t-input");
 
         passwordField = new PasswordField();
         passwordField.setPromptText("Passwort");
-        passwordField.getStyleClass().add("login-field");
+        passwordField.getStyleClass().addAll("login-field", "t-input");
 
         VBox fields = new VBox(10, usernameField, passwordField);
 
         loginButton = new Button("Anmelden");
-        loginButton.getStyleClass().addAll("button-primary", "login-button");
-        loginButton.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(loginButton, javafx.scene.layout.Priority.ALWAYS);
+        loginButton.getStyleClass().addAll("button-primary", "button-large", "login-button");
+        // Phase 4 §7: Primary stays at min-width 120 so it's visually dominant
+        // without growing edge-to-edge. The flat secondary next to it is
+        // intentionally smaller — spec forbids two equally-sized buttons.
+        loginButton.setPrefWidth(120);
 
         registerButton = new Button("Registrieren");
-        registerButton.getStyleClass().addAll("button-secondary", "login-button");
-        registerButton.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(registerButton, javafx.scene.layout.Priority.ALWAYS);
+        registerButton.getStyleClass().addAll("button-flat", "button-large", "login-button");
 
-        HBox buttons = new HBox(10, loginButton, registerButton);
-        buttons.setAlignment(Pos.CENTER);
+        HBox buttons = new HBox(8, loginButton, registerButton);
+        buttons.setAlignment(Pos.CENTER_LEFT);
 
         errorLabel = new Label();
-        errorLabel.getStyleClass().add("login-error");
+        errorLabel.getStyleClass().addAll("login-error", "t-caption");
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
         errorLabel.setWrapText(true);
 
         Label footer = new Label("Bei Problemen wende dich an dein IT-Team.");
-        footer.getStyleClass().add("login-footer");
+        footer.getStyleClass().addAll("login-footer", "t-caption");
 
         card.getChildren().addAll(title, subtitle, fields, errorLabel, buttons, footer);
-        card.setPadding(new Insets(30, 28, 28, 28));
+        // Phase 4 §7: card padding --space-6 (32) all around.
+        card.setPadding(new Insets(32, 32, 32, 32));
 
         setAlignment(Pos.CENTER);
         setPadding(new Insets(24));

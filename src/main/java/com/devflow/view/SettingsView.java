@@ -38,8 +38,11 @@ public class SettingsView extends ScrollPane {
         setFitToWidth(true);
         setHbarPolicy(ScrollBarPolicy.NEVER);
 
-        VBox root = new VBox(24);
-        root.setPadding(new Insets(32, 40, 32, 40));
+        // Phase 4 §3 + Polish-Pass §4: padding 24, between-section gap 32 ("Section-Break").
+        // Each section wraps its (title, card) into a sub-VBox with a 12 gap so the
+        // header sits tight to its card without the 32 break spilling inside.
+        VBox root = new VBox(32);
+        root.setPadding(new Insets(24, 24, 24, 24));
         root.setMaxWidth(720);
 
         // The sidebar brand already says "Einstellungen" when this view is active —
@@ -73,13 +76,14 @@ public class SettingsView extends ScrollPane {
         githubCard.getStyleClass().add("settings-card");
 
         Label patLabel = new Label("Personal Access Token");
-        patLabel.getStyleClass().add("settings-label");
+        patLabel.getStyleClass().addAll("settings-label", "t-card-title");
 
         Label patDesc = new Label("Wird benötigt um Updates aus dem privaten Repository zu beziehen. Der Token wird lokal gespeichert.");
-        patDesc.getStyleClass().add("settings-description");
+        patDesc.getStyleClass().addAll("settings-description", "t-body");
         patDesc.setWrapText(true);
 
         patField = new PasswordField();
+        patField.getStyleClass().addAll("text-field", "t-input");
         patField.setPromptText("ghp_...");
         // SECURITY: never pre-fill the field with the stored token. Showing it (even masked)
         // hands the secret to any over-the-shoulder observer the moment they reveal the field
@@ -91,7 +95,7 @@ public class SettingsView extends ScrollPane {
         clearPatButton.getStyleClass().add("button-secondary");
 
         patStatus = new Label();
-        patStatus.getStyleClass().add("settings-description");
+        patStatus.getStyleClass().addAll("settings-description", "t-caption");
         refreshPatStatus();
 
         HBox patButtons = new HBox(10, savePatButton, clearPatButton);
@@ -125,10 +129,10 @@ public class SettingsView extends ScrollPane {
         accountCard.getStyleClass().add("settings-card");
 
         Label logoutLabel = new Label("Abmelden");
-        logoutLabel.getStyleClass().add("settings-label");
+        logoutLabel.getStyleClass().addAll("settings-label", "t-card-title");
 
         Label logoutDesc = new Label("Meldet dich von diesem Gerät ab. Deine Unterhaltungen bleiben erhalten.");
-        logoutDesc.getStyleClass().add("settings-description");
+        logoutDesc.getStyleClass().addAll("settings-description", "t-body");
         logoutDesc.setWrapText(true);
 
         logoutButton = new Button("Abmelden");
@@ -143,17 +147,18 @@ public class SettingsView extends ScrollPane {
         VBox aboutCard = new VBox(6);
         aboutCard.getStyleClass().add("settings-card");
         Label version = new Label("DevFlow " + AppConfig.APP_VERSION);
-        version.getStyleClass().add("settings-label");
+        version.getStyleClass().addAll("settings-label", "t-card-title");
         Label about = new Label("Enterprise-Chat für Teams.");
-        about.getStyleClass().add("settings-version");
+        about.getStyleClass().addAll("settings-version", "t-body");
         aboutCard.getChildren().addAll(version, about);
 
-        root.getChildren().addAll(
-                appearanceTitle, appearanceCard,
-                githubTitle, githubCard,
-                accountTitle, accountCard,
-                aboutTitle, aboutCard
-        );
+        // Polish-Pass §4: each section wraps its (title, card) into a 12-gap
+        // VBox; the root VBox provides the larger 32 gap between sections.
+        VBox appearanceSection = new VBox(12, appearanceTitle, appearanceCard);
+        VBox githubSection     = new VBox(12, githubTitle,     githubCard);
+        VBox accountSection    = new VBox(12, accountTitle,    accountCard);
+        VBox aboutSection      = new VBox(12, aboutTitle,      aboutCard);
+        root.getChildren().addAll(appearanceSection, githubSection, accountSection, aboutSection);
 
         wrapper = new HBox(root);
         wrapper.setAlignment(Pos.TOP_CENTER);
@@ -194,15 +199,15 @@ public class SettingsView extends ScrollPane {
 
     private Label sectionTitle(String text) {
         Label l = new Label(text);
-        l.getStyleClass().add("settings-section-title");
+        l.getStyleClass().addAll("settings-section-title", "t-section-header");
         return l;
     }
 
     private HBox settingsRow(String title, String description, javafx.scene.Node control) {
         Label t = new Label(title);
-        t.getStyleClass().add("settings-label");
+        t.getStyleClass().addAll("settings-label", "t-card-title");
         Label d = new Label(description);
-        d.getStyleClass().add("settings-description");
+        d.getStyleClass().addAll("settings-description", "t-body");
         d.setWrapText(true);
         VBox text = new VBox(4, t, d);
         HBox.setHgrow(text, Priority.ALWAYS);

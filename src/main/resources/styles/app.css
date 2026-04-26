@@ -7,100 +7,159 @@
    ══════════════════════════════════════════════════════════════ */
 
 .root {
-    -fx-font-family: "Roboto", "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    /* Phase 4: Spec-Font-Stack (System-Default first, no Inter bundling per Q13). */
+    -fx-font-family: "-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "Roboto", sans-serif;
     -fx-font-smoothing-type: lcd;
     -fx-font-size: 13px;
-    -fx-font-weight: 500;
+    -fx-font-weight: 400;
 
-    /* ── Dark palette (default, tweakcn neutral + azure) ── */
-    -df-background:           #0a0a0a;
-    -df-foreground:           #fafafa;
-    -df-card:                 #171717;
-    -df-card-foreground:      #fafafa;
-    -df-popover:              #262626;
-    -df-popover-foreground:   #fafafa;
+    /* ══════════════════════════════════════════════════════════════
+       Phase 4 — Linear-Style Token Layer (Dark default)
+       Old -df-* tokens are aliased to the new tokens below so the
+       hundreds of existing rules pick up new values without churn.
+       Activity-Rail tokens (-df-rail / -df-rail-hover) stay aliased
+       even after Block-3 rail-removal — harmless when unreferenced.
+       ══════════════════════════════════════════════════════════════ */
 
-    -df-primary:              #2b7fff;
-    -df-primary-hover:        #4a92ff;
-    -df-primary-press:        #1f6de8;
+    /* Backgrounds — Polish-Pass: kühler getönt für Harmonie mit dem Blau-Akzent. */
+    -bg-page:        #07080c;
+    -bg-elevated-1:  #0e1018;
+    -bg-elevated-2:  #161924;
+    -bg-elevated-3:  #1f2330;
+
+    /* Borders — Polish-Pass: subtle deutlich gedimmter, fast unsichtbar. */
+    -border-subtle:  #15171f;
+    -border-strong:  #2a2e3d;
+    /* New token (Polish-Pass): outlined-button hover-border lift. */
+    -border-strong-hover: #34384a;
+
+    /* Text — Polish-Pass: minimal kühler getönt; tertiary deutlich gedimmter. */
+    -text-primary:   #ecedf2;
+    -text-secondary: #a3a6b8;
+    -text-tertiary:  #565a6e;
+
+    /* Accent — Polish-Pass: shift from indigo-purple (#5e6ad2) to vivid blue.
+       Press-state identical to hover per Q1. Soft alpha lifted to 0.15
+       (was 0.12) so active-state highlights read as actual highlights.
+       New -accent-glow at 0.25 alpha is the brand-mark gradient stop and
+       the primary-button hover-shadow source. */
+    -accent:         #4d7cfe;
+    -accent-hover:   #6491ff;
+    -accent-soft:    rgba(77, 124, 254, 0.15);
+    -accent-glow:    rgba(77, 124, 254, 0.25);
+
+    /* Status */
+    -success:        #4cb782;
+    -danger:         #e5484d;
+    -danger-soft:    rgba(229, 72, 77, 0.12);
+    -warning:        #ffb224; /* Q3: future-proofing — no use-site yet. */
+
+    /* ── Legacy -df-* aliases (rule-side stays untouched) ── */
+    -df-background:           -bg-page;
+    -df-foreground:           -text-primary;
+    -df-card:                 -bg-elevated-1;
+    -df-card-foreground:      -text-primary;
+    -df-popover:              -bg-elevated-2;
+    -df-popover-foreground:   -text-primary;
+
+    -df-primary:              -accent;
+    -df-primary-hover:        -accent-hover;
+    -df-primary-press:        -accent-hover;
     -df-primary-foreground:   #ffffff;
-    -df-primary-soft:         rgba(43, 127, 255, 0.14);
+    -df-primary-soft:         -accent-soft;
 
-    -df-secondary:            #262626;
-    -df-secondary-foreground: #fafafa;
-    -df-muted:                #262626;
-    -df-muted-foreground:     #a1a1a1;
+    -df-secondary:            -bg-elevated-2;
+    -df-secondary-foreground: -text-primary;
+    -df-muted:                -bg-elevated-2;
+    -df-muted-foreground:     -text-secondary;
 
-    -df-accent:               #404040;
-    -df-accent-foreground:    #fafafa;
+    -df-accent:               -bg-elevated-3;
+    -df-accent-foreground:    -text-primary;
 
-    -df-destructive:          #ff6467;
-    -df-destructive-soft:     rgba(255, 100, 103, 0.12);
-    -df-destructive-foreground: #fafafa;
+    -df-destructive:          -danger;
+    -df-destructive-soft:     -danger-soft;
+    -df-destructive-foreground: #ffffff;
 
-    -df-border:               #282828;
-    -df-border-soft:          #1f1f1f;
-    -df-input:                #1f1f1f;
-    -df-ring:                 #737373;
+    -df-border:               -border-strong;
+    -df-border-soft:          -border-subtle;
+    -df-input:                -bg-elevated-2;
+    -df-ring:                 -accent;
 
-    -df-titlebar:             #0f0f0f;
-    -df-rail:                 #0a0a0a;
-    -df-rail-hover:           #1a1a1a;
+    -df-titlebar:             -bg-elevated-1;
+    -df-rail:                 -bg-elevated-1;       /* obsolete after Block 3 rail-removal */
+    -df-rail-hover:           -bg-elevated-2;       /* obsolete after Block 3 rail-removal */
 
-    -df-sidebar:              #121212;
-    -df-sidebar-foreground:   #fafafa;
-    -df-sidebar-border:       #1f1f1f;
+    -df-sidebar:              -bg-elevated-1;
+    -df-sidebar-foreground:   -text-primary;
+    -df-sidebar-border:       -border-subtle;
 
-    -df-success:              #22c55e;
-    -df-online:               #22c55e;
-    -df-offline:              #737373;
+    -df-success:              -success;
+    -df-online:               -success;
+    -df-offline:              -text-tertiary;
 
     -df-overlay:              rgba(0, 0, 0, 0.60);
 }
 
 .light-theme {
-    -df-background:           #ffffff;
-    -df-foreground:           #0a0a0a;
-    -df-card:                 #ffffff;
-    -df-card-foreground:      #0a0a0a;
-    -df-popover:              #ffffff;
-    -df-popover-foreground:   #0a0a0a;
+    /* Spec gives only the three BG values; rest is stub-TODO per Q10. */
+    -bg-page:        #ffffff;
+    -bg-elevated-1:  #f7f8f9;
+    -bg-elevated-2:  #eceef0;
+    /* TODO(phase-4-light-polish): values below are conservative GitHub-Primer
+       stubs. Verify visually when Light theme moves out of Dark-only scope. */
+    -bg-elevated-3:  #e1e4e8;
+    -border-subtle:  #e1e4e8;
+    -border-strong:  #d0d7de;
+    -border-strong-hover: #b8bfc6;
+    -text-primary:   #1f2328;
+    -text-secondary: #656d76;
+    -text-tertiary:  #8c959f;
 
-    -df-primary:              #2b7fff;
-    -df-primary-hover:        #1f6de8;
-    -df-primary-press:        #195ccc;
+    /* Accent / Status keep Dark values per Q10. Polish-Pass shifted accent
+       to vivid blue and lifted -accent-soft alpha to 0.15. */
+    -accent:         #4d7cfe;
+    -accent-hover:   #6491ff;
+    -accent-soft:    rgba(77, 124, 254, 0.15);
+    -accent-glow:    rgba(77, 124, 254, 0.25);
+    -success:        #4cb782;
+    -danger:         #e5484d;
+    -danger-soft:    rgba(229, 72, 77, 0.12);
+    -warning:        #ffb224;
+
+    /* Legacy aliases re-mapped for Light. */
+    -df-background:           -bg-page;
+    -df-foreground:           -text-primary;
+    -df-card:                 -bg-elevated-1;
+    -df-card-foreground:      -text-primary;
+    -df-popover:              -bg-elevated-2;
+    -df-popover-foreground:   -text-primary;
+    -df-primary:              -accent;
+    -df-primary-hover:        -accent-hover;
+    -df-primary-press:        -accent-hover;
     -df-primary-foreground:   #ffffff;
-    -df-primary-soft:         rgba(43, 127, 255, 0.10);
-
-    -df-secondary:            #f4f4f5;
-    -df-secondary-foreground: #18181b;
-    -df-muted:                #f4f4f5;
-    -df-muted-foreground:     #71717a;
-
-    -df-accent:               #efeff1;
-    -df-accent-foreground:    #18181b;
-
-    -df-destructive:          #dc2626;
-    -df-destructive-soft:     rgba(220, 38, 38, 0.08);
+    -df-primary-soft:         -accent-soft;
+    -df-secondary:            -bg-elevated-2;
+    -df-secondary-foreground: -text-primary;
+    -df-muted:                -bg-elevated-2;
+    -df-muted-foreground:     -text-secondary;
+    -df-accent:               -bg-elevated-3;
+    -df-accent-foreground:    -text-primary;
+    -df-destructive:          -danger;
+    -df-destructive-soft:     -danger-soft;
     -df-destructive-foreground: #ffffff;
-
-    -df-border:               #e4e4e7;
-    -df-border-soft:          #ededee;
-    -df-input:                #fafafa;
-    -df-ring:                 #2b7fff;
-
-    -df-titlebar:             #fafafa;
-    -df-rail:                 #f7f7f8;
-    -df-rail-hover:           #efeff1;
-
-    -df-sidebar:              #fafafa;
-    -df-sidebar-foreground:   #0a0a0c;
-    -df-sidebar-border:       #e4e4e7;
-
-    -df-success:              #16a34a;
-    -df-online:               #16a34a;
-    -df-offline:              #a1a1aa;
-
+    -df-border:               -border-strong;
+    -df-border-soft:          -border-subtle;
+    -df-input:                -bg-elevated-2;
+    -df-ring:                 -accent;
+    -df-titlebar:             -bg-elevated-1;
+    -df-rail:                 -bg-elevated-1;
+    -df-rail-hover:           -bg-elevated-2;
+    -df-sidebar:              -bg-elevated-1;
+    -df-sidebar-foreground:   -text-primary;
+    -df-sidebar-border:       -border-subtle;
+    -df-success:              -success;
+    -df-online:               -success;
+    -df-offline:              -text-tertiary;
     -df-overlay:              rgba(0, 0, 0, 0.35);
 }
 
@@ -114,11 +173,9 @@
 .label { -fx-text-fill: -df-foreground; }
 .muted { -fx-text-fill: -df-muted-foreground; }
 
-.section-title {
-    -fx-font-size: 15px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
+/* Phase 4: font tokens come from atomic .t-* classes (apply in Java).
+   This rule keeps colour-only so legacy call sites still get -df-foreground. */
+.section-title { -fx-text-fill: -df-foreground; }
 
 .tooltip {
     -fx-background-color: -df-popover;
@@ -161,15 +218,33 @@
 .scroll-pane > .viewport { -fx-background-color: transparent; }
 .scroll-pane > .corner { -fx-background-color: transparent; }
 
-/* ── Buttons ── */
+/* ── Buttons ── (Phase 4 — Linear-Style sizing)
+   Standard 32h, compact 28h, large 36h. Radius 6. Padding 10/16 (standard).
+   Typography sourced from .t-body-strong applied at the call site. */
 
 .button {
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
     -fx-cursor: hand;
     -fx-font-size: 13px;
-    -fx-font-weight: 600;
-    -fx-padding: 7 14;
+    -fx-font-weight: 500;
+    -fx-padding: 6 16; /* vertical 6 + 13px text + 6 ≈ 32h */
+    -fx-min-height: 32;
+    -fx-pref-height: 32;
+}
+
+/* Compact (toolbar) variant — 28h. */
+.button-compact {
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-padding: 4 12;
+}
+
+/* Large (modal-submit) variant — 36h. */
+.button-large {
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-padding: 8 18;
 }
 
 .button-primary {
@@ -177,62 +252,67 @@
     -fx-text-fill: -df-primary-foreground;
     -fx-border-color: transparent;
 }
-.button-primary:hover  { -fx-background-color: -df-primary-hover; }
-.button-primary:pressed{ -fx-background-color: -df-primary-press; }
+.button-primary:hover    { -fx-background-color: -df-primary-hover; }
+.button-primary:pressed  { -fx-background-color: -df-primary-hover; } /* Q1: press == hover */
 .button-primary:disabled { -fx-opacity: 0.5; }
 
+/* Outlined / "secondary" — transparent fill, 1px strong border. */
 .button-secondary {
-    -fx-background-color: -df-secondary;
-    -fx-text-fill: -df-secondary-foreground;
+    -fx-background-color: transparent;
+    -fx-text-fill: -df-foreground;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
 }
-.button-secondary:hover { -fx-background-color: -df-accent; }
+.button-secondary:hover { -fx-background-color: -df-muted; }
 
 .button-destructive {
     -fx-background-color: transparent;
     -fx-text-fill: -df-destructive;
     -fx-border-color: -df-destructive;
     -fx-border-width: 1;
-    -fx-font-weight: 600;
 }
-.button-destructive:hover {
-    -fx-background-color: -df-destructive-soft;
-}
-.button-destructive:pressed {
-    -fx-background-color: -df-destructive;
-    -fx-text-fill: -df-destructive-foreground;
-}
+.button-destructive:hover   { -fx-background-color: -df-destructive-soft; }
+.button-destructive:pressed { -fx-background-color: -df-destructive; -fx-text-fill: -df-destructive-foreground; }
 
+/* Flat — no fill, no border, secondary text colour. Hover lifts onto elevated-2.
+   .button-ghost kept as alias so existing call sites continue to render
+   identically; new code uses .button-flat. */
+.button-flat,
 .button-ghost {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
     -fx-border-color: transparent;
-    -fx-padding: 6 10;
-    -fx-font-weight: 500;
+    -fx-padding: 6 12;
 }
+.button-flat:hover,
 .button-ghost:hover {
-    -fx-background-color: -df-accent;
+    -fx-background-color: -df-muted;
     -fx-text-fill: -df-foreground;
 }
 
-/* ── Inputs ── */
-
+/* ── Inputs ── (Phase 4 — Linear-Style)
+   Height 36 via 9/12 padding. Radius 6. Strong border at rest.
+   Focus state: JavaFX-Equivalent zu Spec-Box-Shadow-Focus-Ring (kein nativer
+   Box-Shadow) — Multi-Border mit negativem Outer-Inset: inner 1px accent,
+   outer 2px accent-soft pulled outward by -2px. Don't "simplify" this back to
+   single-border; the ring is the design-system focus marker. */
 .text-field, .password-field {
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
-    -fx-padding: 8 11;
+    -fx-padding: 9 12;
     -fx-font-size: 13px;
 }
 .text-field:focused, .password-field:focused {
-    -fx-border-color: -df-ring;
-    -fx-border-width: 1.5;
-    -fx-padding: 7.5 10.5;
+    -fx-border-color: -accent-soft, -accent;
+    -fx-border-width: 2, 1;
+    -fx-border-insets: -2, 0;
+    -fx-border-radius: 8, 6;
+    -fx-padding: 9 12;
 }
 
 /* ── Window frame (rounded transparent stage) ── */
@@ -268,8 +348,7 @@
 }
 .window-frame.maximized .sidebar { -fx-background-radius: 0; }
 
-.window-frame .activity-rail { -fx-background-radius: 0 0 0 12; }
-.window-frame.maximized .activity-rail { -fx-background-radius: 0; }
+/* (Activity-rail bottom-radius rule removed — Phase 4 Block 3 dropped the rail.) */
 
 .content-area { -fx-background-color: -df-background; }
 
@@ -286,14 +365,24 @@
 }
 .window-frame.maximized .titlebar { -fx-background-radius: 0; }
 
-.titlebar-brand {
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
+/* Phase 4: font sizes come from atomic .t-body-strong / .t-caption applied
+   in CustomTitleBar.java; rules here keep only colour responsibilities. */
+.titlebar-brand    { -fx-text-fill: -df-foreground; }
+.titlebar-subtitle { -fx-text-fill: -df-muted-foreground; }
+.titlebar-offline  { -fx-text-fill: -df-destructive; }
+/* Ikonli FontIcon glyphs in the titlebar — colour follows the button's
+   text-fill so the icons inherit hover/active states without per-state
+   overrides. -fx-icon-size matches the old unicode glyph cap-height so
+   we don't lose visual weight. */
+.titlebar-button > .titlebar-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: -df-muted-foreground;
 }
-.titlebar-subtitle {
-    -fx-font-size: 11px;
-    -fx-text-fill: -df-muted-foreground;
+.titlebar-button:hover > .titlebar-icon {
+    -fx-icon-color: -df-foreground;
+}
+.titlebar-button-close:hover > .titlebar-icon {
+    -fx-icon-color: white;
 }
 .titlebar-button {
     -fx-background-color: transparent;
@@ -317,77 +406,13 @@
     -fx-text-fill: white;
 }
 
-/* ── Activity rail ── */
+/* ── Activity-rail block REMOVED in Phase 4 Block 3 ──
+   The rail (Chats/Einstellungen/Profil shortcuts on a 60–196 px side strip)
+   was replaced by the in-sidebar primary nav (".sidebar-nav-item" below).
+   Old token aliases -df-rail / -df-rail-hover survive in :root for any
+   accidental references but no rule consumes them anymore. */
 
-.activity-rail {
-    -fx-background-color: -df-rail;
-    -fx-border-color: -df-border-soft;
-    -fx-border-width: 0 1 0 0;
-}
-
-.rail-item {
-    -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-font-size: 13px;
-    -fx-font-weight: 500;
-    -fx-alignment: CENTER_LEFT;
-    -fx-content-display: LEFT;
-    -fx-graphic-text-gap: 12;
-    -fx-padding: 8 12;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
-    -fx-border-color: transparent;
-    -fx-cursor: hand;
-}
-.rail-item:hover {
-    -fx-background-color: -df-rail-hover;
-    -fx-text-fill: -df-foreground;
-}
-.rail-item-active {
-    -fx-background-color: -df-primary-soft;
-    -fx-text-fill: -df-foreground;
-    -fx-font-weight: 700;
-}
-.rail-item-active .rail-icon .df-icon { -fx-stroke: -df-primary; }
-
-.rail-icon {
-    -fx-alignment: center;
-}
-/* SVG icons inside the rail are ~14px square (scaled from 24px grid). */
-.rail-icon .df-icon-wrap {
-    -fx-scale-x: 0.58;
-    -fx-scale-y: 0.58;
-}
-.rail-icon .df-icon {
-    -fx-fill: transparent;
-    -fx-stroke: -df-muted-foreground;
-    -fx-stroke-width: 2.0;
-    -fx-stroke-line-cap: round;
-    -fx-stroke-line-join: round;
-}
-.rail-item:hover .rail-icon .df-icon { -fx-stroke: -df-foreground; }
-
-.rail-toggle {
-    -fx-background-color: transparent;
-    -fx-padding: 6 10;
-    -fx-background-radius: 6;
-    -fx-border-radius: 6;
-    -fx-border-color: transparent;
-    -fx-cursor: hand;
-    -fx-alignment: center;
-}
-.rail-toggle .df-icon-wrap { -fx-scale-x: 0.58; -fx-scale-y: 0.58; }
-.rail-toggle .df-icon {
-    -fx-fill: transparent;
-    -fx-stroke: -df-muted-foreground;
-    -fx-stroke-width: 2.0;
-    -fx-stroke-line-cap: round;
-    -fx-stroke-line-join: round;
-}
-.rail-toggle:hover { -fx-background-color: -df-rail-hover; }
-.rail-toggle:hover .df-icon { -fx-stroke: -df-foreground; }
-
-/* ── Sidebar (chat list panel) ── */
+/* ── Sidebar (Phase 4 — Linear-style, single VBox 240 px) ── */
 
 .sidebar {
     -fx-background-color: -df-sidebar;
@@ -395,137 +420,119 @@
     -fx-border-width: 0 1 0 0;
 }
 
-.sidebar-header {
+/* Subtle 1 px line that separates the workspace switcher from the primary
+   nav, and the primary content from the user bar. Background-color is the
+   only paint — managed sizing is fixed in code (1 px height). */
+.sidebar-section-divider {
+    -fx-background-color: -df-border-soft;
+}
+
+/* Section header row — "CHATS" / "EINSTELLUNGEN" plus the optional plus button.
+   Typography comes from .t-section-header on the inner Label; this rule keeps
+   the row's structural padding/background. */
+.sidebar-section-header { -fx-background-color: transparent; }
+.sidebar-section-header-label { -fx-text-fill: -df-muted-foreground; }
+
+/* Primary-nav button (Chats / Einstellungen / settings sub-tabs).
+   Polish-Pass: 34 h, asymmetric padding 0/10/0/12 to make room for the
+   2 px accent-coloured Left-Border-Indicator on the active state.
+
+   Sandwich-Pattern note: implemented as a single Button node. The 2 px
+   accent line uses -fx-border-radius: 0 so it stays a sharp straight line,
+   while the soft-tinted background uses -fx-background-radius: 6 for the
+   rounded fill. The line extends marginally past the rounded bg corners
+   at top-left / bottom-left — that overshoot is the Linear-signature
+   active-row look. Q6: confirmed sandwich semantics, single-element
+   implementation chosen because it matches the spec visually and avoids
+   the JavaFX quirk where -fx-border on a curved path traces the curve
+   instead of remaining flush at the corners.
+
+   Indented variant pushes left padding to --space-5 (24) for the
+   settings sub-nav rows. */
+.sidebar-nav-item {
     -fx-background-color: transparent;
-    -fx-border-color: -df-sidebar-border;
-    -fx-border-width: 0 0 1 0;
-}
-
-.sidebar-brand {
-    -fx-font-size: 14px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-
-.sidebar-new-chat-btn {
-    -fx-background-color: -df-primary;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 6;
     -fx-border-color: transparent;
-    -fx-padding: 0;
+    -fx-border-width: 0 0 0 2;
+    -fx-border-radius: 0;
+    -fx-border-insets: 0;
+    -fx-padding: 0 10 0 12;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
+    -fx-alignment: CENTER_LEFT;
     -fx-cursor: hand;
+}
+.sidebar-nav-item:hover { -fx-background-color: -bg-elevated-2; }
+.sidebar-nav-item-active {
+    -fx-background-color: -accent-soft;
+    -fx-border-color: -accent;
+}
+.sidebar-nav-item .sidebar-nav-label { -fx-text-fill: -df-muted-foreground; }
+.sidebar-nav-item:hover .sidebar-nav-label { -fx-text-fill: -df-foreground; }
+.sidebar-nav-item-active .sidebar-nav-label { -fx-text-fill: -accent; }
+.sidebar-nav-fonticon {
+    -fx-icon-color: -df-muted-foreground;
+    -fx-icon-size: 16;
+}
+.sidebar-nav-item:hover .sidebar-nav-fonticon { -fx-icon-color: -df-foreground; }
+.sidebar-nav-item-active .sidebar-nav-fonticon { -fx-icon-color: -accent; }
+.sidebar-nav-item.indented { -fx-padding: 0 10 0 24; }
+
+/* Plus button in the chat-section header. Re-styled as flat (button-flat handles
+   bg/text); this rule reins in icon size + container padding for a 28×28 touch
+   target. */
+.sidebar-new-chat-btn {
+    -fx-padding: 4;
     -fx-min-width: 28;
     -fx-min-height: 28;
-    -fx-max-width: 28;
-    -fx-max-height: 28;
+    -fx-pref-width: 28;
+    -fx-pref-height: 28;
     -fx-alignment: center;
 }
-.sidebar-new-chat-btn .df-icon-wrap { -fx-scale-x: 0.62; -fx-scale-y: 0.62; }
-.sidebar-new-chat-btn .df-icon {
-    -fx-fill: transparent;
-    -fx-stroke: -df-primary-foreground;
-    -fx-stroke-width: 2.2;
-    -fx-stroke-line-cap: round;
-    -fx-stroke-line-join: round;
-}
-.sidebar-new-chat-btn:hover  { -fx-background-color: -df-primary-hover; }
-.sidebar-new-chat-btn:pressed{ -fx-background-color: -df-primary-press; }
+.sidebar-new-chat-icon { -fx-icon-color: -df-muted-foreground; -fx-icon-size: 16; }
+.sidebar-new-chat-btn:hover .sidebar-new-chat-icon { -fx-icon-color: -df-foreground; }
 
+/* Search field — Q15: deliberately 32 h (one tier below the 36 h standard
+   form input) so the toolbar reads as a control surface and not as form input.
+   Padding 7/12 + 13 px text ≈ 32 h. */
 .sidebar-search-field {
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
-    -fx-border-color: -df-border;
-    -fx-padding: 7 11;
-    -fx-font-size: 12px;
-}
-.sidebar-search-field:focused { -fx-border-color: -df-ring; -fx-border-width: 1.5; -fx-padding: 6.5 10.5; }
-
-.sidebar-user-bar {
-    -fx-background-color: transparent;
-    -fx-border-color: -df-sidebar-border;
-    -fx-border-width: 1 0 0 0;
-}
-
-.sidebar-username {
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.sidebar-status {
-    -fx-font-size: 11px;
-    -fx-text-fill: -df-muted-foreground;
-}
-.sidebar-presence-online  { -fx-fill: -df-online;  }
-.sidebar-presence-offline { -fx-fill: -df-offline; }
-
-.sidebar-settings-btn {
-    -fx-background-color: transparent;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
-    -fx-border-color: transparent;
-    -fx-padding: 6;
-    -fx-cursor: hand;
-    -fx-min-width: 28;
-    -fx-min-height: 28;
-    -fx-alignment: center;
+    -fx-border-color: -df-border;
+    -fx-border-width: 1;
+    -fx-padding: 6 12;
+    -fx-font-size: 12px;
+    -fx-min-height: 32;
+    -fx-pref-height: 32;
 }
-.sidebar-settings-btn .df-icon-wrap { -fx-scale-x: 0.55; -fx-scale-y: 0.55; }
-.sidebar-settings-btn .df-icon {
-    -fx-fill: transparent;
-    -fx-stroke: -df-muted-foreground;
-    -fx-stroke-width: 2.0;
-    -fx-stroke-line-cap: round;
-    -fx-stroke-line-join: round;
+.sidebar-search-field:focused {
+    /* JavaFX-Equivalent zu Spec-Box-Shadow-Focus-Ring (kein nativer Box-Shadow),
+       Multi-Border mit negativem Outer-Inset. */
+    -fx-border-color: -accent-soft, -accent;
+    -fx-border-width: 2, 1;
+    -fx-border-insets: -2, 0;
+    -fx-border-radius: 8, 6;
+    -fx-padding: 6 12;
 }
-.sidebar-settings-btn:hover { -fx-background-color: -df-accent; }
-.sidebar-settings-btn:hover .df-icon { -fx-stroke: -df-foreground; }
 
-/* ── Sidebar Settings nav ── */
-
-.settings-nav { -fx-background-color: transparent; }
-.settings-nav-item {
+/* User bar — clickable hover row, 56 h fixed. Avatar + username + presence dot
+   + status. Whole row triggers ProfileDialog via the Java click handler. */
+.sidebar-user-bar {
     -fx-background-color: transparent;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-alignment: CENTER_LEFT;
-    -fx-content-display: LEFT;
-    -fx-graphic-text-gap: 10;
-    -fx-padding: 8 12;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
-    -fx-border-color: transparent;
     -fx-cursor: hand;
 }
-.settings-nav-item:hover {
-    -fx-background-color: -df-accent;
-    -fx-text-fill: -df-foreground;
-}
-.settings-nav-item-active {
-    -fx-background-color: -df-primary-soft;
-    -fx-text-fill: -df-foreground;
-}
-.settings-nav-item-active .settings-nav-label { -fx-font-weight: 700; }
-.settings-nav-item-active .settings-nav-icon .df-icon { -fx-stroke: -df-primary; }
-.settings-nav-icon { -fx-alignment: center; }
-.settings-nav-icon .df-icon-wrap {
-    -fx-scale-x: 0.55;
-    -fx-scale-y: 0.55;
-}
-.settings-nav-icon .df-icon {
-    -fx-fill: transparent;
-    -fx-stroke: -df-muted-foreground;
-    -fx-stroke-width: 2.0;
-    -fx-stroke-line-cap: round;
-    -fx-stroke-line-join: round;
-}
-.settings-nav-item:hover .settings-nav-icon .df-icon { -fx-stroke: -df-foreground; }
-.settings-nav-label {
-    -fx-font-size: 13px;
-    -fx-font-weight: 500;
-    -fx-text-fill: inherit;
-}
+.sidebar-user-bar:hover { -fx-background-color: -df-muted; }
+.sidebar-username { -fx-text-fill: -df-foreground; }
+.sidebar-status   { -fx-text-fill: -df-muted-foreground; }
+.sidebar-presence-online  { -fx-fill: -df-online; }
+.sidebar-presence-offline { -fx-fill: -df-offline; }
+
+/* Workspace error banner (rare path — listWorkspaces() failure). */
+.workspace-error-banner { -fx-background-color: -df-destructive-soft; }
+.workspace-error-label { -fx-text-fill: -df-destructive; }
 
 /* ── Avatar / presence ── */
 
@@ -568,19 +575,10 @@
 .list-view-clean .list-cell:empty:hover    { -fx-background-color: transparent; }
 .list-view-clean .list-cell:empty:selected { -fx-background-color: transparent; }
 
-.chat-cell-name {
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.chat-cell-preview {
-    -fx-font-size: 12px;
-    -fx-text-fill: -df-muted-foreground;
-}
-.chat-cell-time {
-    -fx-font-size: 11px;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 4: font sizes via .t-body-strong (name) / .t-caption (preview/time). */
+.chat-cell-name    { -fx-text-fill: -df-foreground; }
+.chat-cell-preview { -fx-text-fill: -df-muted-foreground; }
+.chat-cell-time    { -fx-text-fill: -df-muted-foreground; }
 .chat-cell-badge {
     -fx-background-color: -df-primary;
     -fx-text-fill: white;
@@ -590,15 +588,9 @@
     -fx-background-radius: 999;
 }
 
-.user-cell-name {
-    -fx-font-size: 13px;
-    -fx-font-weight: 600;
-    -fx-text-fill: -df-foreground;
-}
-.user-cell-sub {
-    -fx-font-size: 11px;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 4: font sizes via .t-body-strong (name) / .t-caption (sub). */
+.user-cell-name { -fx-text-fill: -df-foreground; }
+.user-cell-sub  { -fx-text-fill: -df-muted-foreground; }
 .user-cell-btn {
     -fx-background-color: transparent;
     -fx-text-fill: -df-primary;
@@ -628,50 +620,57 @@
     -fx-cursor: hand;
 }
 .chat-list-section-header:hover { -fx-background-color: -df-rail-hover; }
-.chat-list-section-title {
-    -fx-font-size: 11px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-muted-foreground;
-    /* Uppercase look without CSS text-transform (not supported in JavaFX CSS). */
-}
-.chat-list-section-chevron {
-    -fx-font-size: 9px;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 4: section titles use .t-section-header (12/600 + uppercase text content);
+   colour-only here. Chevron font-size moot — class is applied to a FontIcon now,
+   driven by -fx-icon-size in the FontIcon-specific rule lower in this file.
+   Count badge keeps its pill background and padding here (not typography). */
+.chat-list-section-title { -fx-text-fill: -df-muted-foreground; }
 .chat-list-section-count {
-    -fx-font-size: 10px;
     -fx-text-fill: -df-muted-foreground;
     -fx-background-color: -df-accent;
     -fx-background-radius: 999;
     -fx-padding: 1 7;
+    -fx-font-size: 10px; /* badge size kept — atomic .t-* tokens don't cover 10px */
 }
 .chat-list-inner { -fx-padding: 0; }
 
-/* ── Workspace switcher (sidebar header) ── */
+/* Sub-sections inside the "Gruppenchats" umbrella (Phase 2c folder tree). */
+.chat-list-subsection-header {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+.chat-list-subsection-header:hover { -fx-background-color: -df-rail-hover; }
+/* Phase 4: font via .t-body-strong applied in ChatListView.createSubSection. */
+.chat-list-subsection-title { -fx-text-fill: -df-foreground; }
+
+/* ── Workspace switcher (sidebar top, hover row) ──
+   Phase 4: simplified to "Name + Chevron only" per spec §5. The Layers icon,
+   Star pin, and Gear button are gone. Per-workspace Settings live in the
+   ContextMenu (vorletzter Eintrag). */
 
 .workspace-switcher {
     -fx-background-color: transparent;
-    -fx-border-color: -df-sidebar-border;
-    -fx-border-width: 0 0 1 0;
     -fx-cursor: hand;
 }
-.workspace-switcher:hover { -fx-background-color: -df-rail-hover; }
-.workspace-switcher-icon {
-    -fx-font-size: 12px;
-    -fx-text-fill: -df-primary;
-}
+.workspace-switcher:hover { -fx-background-color: -df-muted; }
+
+/* Polish-Pass §3 — workspace-switcher name uses a card-title-sized but
+   medium-weight variant (14 / 500). Deliberate one-off: it shares the
+   "card title" tier visually, but the lighter weight differentiates the
+   chrome label from in-card titles (which stay at .t-card-title 14/600).
+   Defined here directly rather than as a new atomic .t-* token because
+   the use-site is single. */
 .workspace-switcher-name {
-    -fx-font-size: 12px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.workspace-switcher-chevron {
-    -fx-font-size: 9px;
-    -fx-text-fill: -df-muted-foreground;
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
 }
 
 /* ── Welcome ── */
 
+/* Phase 4: legacy welcome-* SVG-icon rules retained for any non-EmptyState
+   call sites. Welcome screen now uses EmptyState (Block 9 wires the .welcome-empty-state
+   override) — these stay only for backward compatibility. */
 .welcome-content { -fx-alignment: center; }
 .welcome-glyph-host { -fx-padding: 0 0 10 0; }
 .welcome-glyph .df-icon-wrap { -fx-scale-x: 2.6; -fx-scale-y: 2.6; }
@@ -683,50 +682,26 @@
     -fx-stroke-line-join: round;
     -fx-opacity: 0.55;
 }
-.welcome-title {
-    -fx-font-size: 24px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.welcome-subtitle {
-    -fx-font-size: 13px;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 4: font via .t-page-title (welcome-title) / .t-body (welcome-subtitle). */
+.welcome-title    { -fx-text-fill: -df-foreground; }
+.welcome-subtitle { -fx-text-fill: -df-muted-foreground; }
 
 /* ── Settings ── */
 
 .settings-view { -fx-background-color: -df-background; }
-.settings-header {
-    -fx-font-size: 22px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.settings-section-title {
-    -fx-font-size: 11px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 4: settings typography via atomic .t-* classes applied in SettingsView.java.
+   These rules keep colour-only. Card-borders are dropped per spec §9 (Block 7
+   tightens padding/radius to spec values). */
+.settings-header         { -fx-text-fill: -df-foreground; }
+.settings-section-title  { -fx-text-fill: -df-muted-foreground; }
+.settings-label          { -fx-text-fill: -df-foreground; }
+.settings-description    { -fx-text-fill: -df-muted-foreground; -fx-wrap-text: true; }
+.settings-version        { -fx-text-fill: -df-muted-foreground; }
 .settings-card {
     -fx-background-color: -df-card;
-    -fx-background-radius: 9;
-    -fx-border-color: -df-border;
-    -fx-border-width: 1;
-    -fx-border-radius: 9;
-    -fx-padding: 18;
-}
-.settings-label {
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.settings-description {
-    -fx-font-size: 12px;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-wrap-text: true;
-}
-.settings-version {
-    -fx-font-size: 12px;
-    -fx-text-fill: -df-muted-foreground;
+    -fx-background-radius: 8;
+    -fx-padding: 24;
+    /* Border intentionally omitted — spec §9: "Cards: keine Border, ..." */
 }
 
 /* ── Toggle Switch (ControlsFX) ── */
@@ -746,11 +721,8 @@
 /* ── Empty state ── */
 
 .empty-state { -fx-alignment: center; }
-.empty-state-text {
-    -fx-font-size: 13px;
-    -fx-text-fill: -df-muted-foreground;
-    -fx-text-alignment: center;
-}
+/* Phase 4: font via .t-body applied at call sites. */
+.empty-state-text { -fx-text-fill: -df-muted-foreground; -fx-text-alignment: center; }
 
 /* ── Modal Overlay / Dialogs ── */
 
@@ -764,22 +736,20 @@
     -fx-border-color: -df-border;
     -fx-border-width: 1;
     -fx-border-radius: 12;
-    /* Single shadow per dialog instance — kept for elevation. */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 26, 0.18, 0, 10);
+    /* Phase 4 — Spec §11: single allowed shadow value 0 16px 48px rgba(0,0,0,0.5). */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 48, 0.0, 0, 16);
 }
 .light-theme .modal-card {
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 26, 0.16, 0, 10);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 48, 0.0, 0, 16);
 }
 
-.modal-title {
-    -fx-font-size: 16px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
-.modal-subtitle {
-    -fx-font-size: 12px;
-    -fx-text-fill: -df-muted-foreground;
-}
+/* Phase 3 P3: type tokens are now driven by AtlantaFX (Styles.TITLE_4 +
+   Styles.TEXT_BOLD on the Java side, see e.g. NewChatDialog). The custom
+   classes here only contribute colour overrides — font-size and weight
+   come from the Primer theme, so the dialog typography stays consistent
+   with the rest of the AtlantaFX-styled controls. */
+.modal-title { -fx-text-fill: -df-foreground; }
+.modal-subtitle { -fx-text-fill: -df-muted-foreground; }
 
 .modal-close-btn {
     -fx-background-color: transparent;
@@ -794,6 +764,16 @@
 .modal-close-btn:hover {
     -fx-background-color: -df-accent;
     -fx-text-fill: -df-foreground;
+}
+/* Glyph hook (Phase 3 P1) — the ModalCloseButton uses a Feather X FontIcon
+   instead of the unicode ✕ character. Icon-color follows the button's
+   text-fill so :hover automatically lifts the glyph too. */
+.modal-close-btn > .modal-close-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: -df-muted-foreground;
+}
+.modal-close-btn:hover > .modal-close-icon {
+    -fx-icon-color: -df-foreground;
 }
 
 .modal-tab-bar {
@@ -839,23 +819,29 @@
     -fx-cursor: hand;
 }
 .chip-close:hover { -fx-text-fill: -df-destructive; }
+.chip-close > .chip-close-icon {
+    -fx-icon-size: 10;
+    -fx-icon-color: -df-muted-foreground;
+}
+.chip-close:hover > .chip-close-icon { -fx-icon-color: -df-destructive; }
 
-/* ── Update Dialog ── */
+/* ── Update Dialog ── (Phase 4 — aligned with .modal-card pattern) */
 
 .update-dialog {
-    -fx-background-color: -df-card;
+    -fx-background-color: -bg-elevated-1;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
     -fx-border-radius: 12;
     -fx-background-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 26, 0.18, 0, 10);
+    /* Same single shadow as .modal-card per spec §11. */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 48, 0.0, 0, 16);
 }
 .update-notes {
-    -fx-control-inner-background: -df-input;
+    -fx-control-inner-background: -bg-elevated-2;
     -fx-text-fill: -df-foreground;
     -fx-border-color: -df-border;
-    -fx-border-radius: 7;
-    -fx-background-radius: 7;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-font-family: "Roboto Mono", "Consolas", monospace;
     -fx-font-size: 12px;
 }
@@ -873,3 +859,159 @@
 .menu-item { -fx-background-radius: 6; -fx-padding: 6 12; }
 .menu-item .label { -fx-text-fill: -df-foreground; -fx-font-size: 12px; }
 .menu-item:focused { -fx-background-color: -df-accent; }
+
+/* ── Lifted-from-Java inline styles (Phase 3 audit) ──
+   Keeping these as named classes makes hover/focus/theme-swap behaviour
+   consistent and removes -fx-* string concatenation from controller code. */
+
+/* Avatar initials (Phase 4). Font-size stays parameterised in code (Avatar
+   diameter varies per call site). Per spec §4: text in -text-primary (light
+   grey, not pure white) plus a soft drop-shadow so the initials stay legible
+   on every gradient pair. The shadow is the JavaFX equivalent of the spec's
+   text-shadow: 0 1px 2px rgba(0,0,0,0.3). */
+.avatar-initials {
+    -fx-text-fill: -text-primary;
+    -fx-font-weight: 600;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.30), 2, 0.5, 0, 1);
+}
+
+/* Polish-Pass — Brand mark (see view/BrandMark.java). Sizing + gradient are
+   driven from code; this rule covers the wordmark text only. */
+.brand-mark-text {
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 2, 0.5, 0, 1);
+}
+
+/* Monospaced invite/code fields. Wide letter-spacing makes the 6-char
+   code readable at a glance; the slightly bigger size signals it's the
+   primary action target on workspace dialogs. */
+.invite-code-field {
+    -fx-font-family: "Consolas", "Menlo", monospace;
+    -fx-font-size: 16px;
+    -fx-letter-spacing: 2px;
+}
+
+/* Sentinel "(no folder)" entry in the GroupFolder picker — italic +
+   muted to read as a placeholder rather than a real folder. */
+.group-folder-sentinel {
+    -fx-font-style: italic;
+    -fx-text-fill: -df-muted-foreground;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Phase 3 P1.3 — Feather FontIcon migration
+
+   FontIcons expose -fx-icon-color and -fx-icon-size as CSS properties. Where
+   the old SVG path nodes used .df-icon { -fx-stroke: ... }, the equivalent
+   for Ikonli FontIcons is -fx-icon-color on the FontIcon node itself. The
+   ".rail-icon" / ".settings-nav-icon" wrappers are unchanged — only the
+   inner glyph type swapped from a Polyline tree to a FontIcon.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* (.rail-fonticon and .settings-nav-fonticon blocks REMOVED — Phase 4 Block 3.
+   The new in-sidebar primary nav uses .sidebar-nav-fonticon defined above.) */
+
+/* Phase 4: header-side switcher glyphs (Layers icon / Pin star / Gear button)
+   were dropped per spec §11. Only the chevron survives in the header. */
+.workspace-switcher-chevron {
+    /* Polish-Pass §3: chevron tinted to tertiary (deeper-muted) and 11 px.  */
+    -fx-icon-color: -text-tertiary;
+    -fx-icon-size: 11;
+}
+
+/* Workspace dropdown rows. Pin (Star) marks the personal workspace — kept in
+   the menu only (Q-tweak: useful as a "protected workspace" cue, even though
+   the same icon was banned from the header). Check marks the current row. */
+.workspace-menu-pin {
+    -fx-icon-color: -df-primary;
+    -fx-icon-size: 12;
+}
+.workspace-menu-check {
+    -fx-icon-color: -df-primary;
+    -fx-icon-size: 12;
+}
+/* Icon prefix on the action menu items (Workspace-Einstellungen / Neu / Beitreten). */
+.workspace-menu-action-icon {
+    -fx-icon-color: -df-muted-foreground;
+    -fx-icon-size: 12;
+}
+
+/* Section/sub-section chevrons in the chat list. Replaces ▾/▸ unicode glyphs. */
+.chat-list-section-chevron {
+    -fx-icon-color: -df-muted-foreground;
+    -fx-icon-size: 12;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Phase 3 P2 — EmptyState card
+   Three call sites (Welcome panel, ChatList sidebar, ChatView "no messages")
+   share these styles so empty surfaces look related instead of incidental.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.empty-state-card { -fx-alignment: center; }
+.empty-state-glyph-host { -fx-padding: 0 0 6 0; }
+.empty-state-glyph {
+    -fx-icon-color: -df-muted-foreground;
+    -fx-icon-size: 56;
+    -fx-opacity: 0.55;
+}
+/* Phase 4: typography via atomic classes applied at call sites
+   (.t-card-title for title, .t-body for subtitle, .t-body-strong for action). */
+.empty-state-title    { -fx-text-fill: -df-foreground;       -fx-text-alignment: center; }
+.empty-state-subtitle { -fx-text-fill: -df-muted-foreground; -fx-text-alignment: center; }
+/* Welcome-screen variant: spec §6 demands 48px glyph (smaller than the 56
+   default) and -df-muted-foreground tertiary feel — applied in MainController. */
+.welcome-empty-state .empty-state-glyph { -fx-icon-size: 48; }
+/* Compact variant inside the chat-list sidebar — kept for any future re-introduction
+   of an in-sidebar empty state. ChatListView's own empty-state node was removed in
+   Block 9 to honour spec §6 ("sidebar shall not double-shout"). */
+.chat-list-panel .empty-state-glyph { -fx-icon-size: 36; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Phase 4 — Atomic Type Tokens (Route A per Q5)
+   Apply via .getStyleClass().add("t-…") in Java. Component-level CSS classes
+   keep colour/padding only — typography flows from these seven tokens.
+   Note: -fx-letter-spacing isn't honoured by JavaFX-CSS in current versions;
+   the property is left in place per spec so it activates if support lands.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.t-page-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 600;
+    -fx-letter-spacing: -0.01em;
+    -fx-text-fill: -text-primary;
+}
+.t-section-header {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-letter-spacing: 0.04em;
+    -fx-text-fill: -text-secondary;
+    /* Uppercase comes from the source text content — JavaFX-CSS has no
+       text-transform, so call sites must pass already-uppercased strings. */
+}
+.t-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -text-primary;
+}
+.t-body {
+    -fx-font-size: 13px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -text-primary;
+}
+.t-body-strong {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -text-primary;
+}
+.t-caption {
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -text-secondary;
+}
+.t-input {
+    -fx-font-size: 13px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -text-primary;
+}

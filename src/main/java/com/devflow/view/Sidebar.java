@@ -1,11 +1,20 @@
 package com.devflow.view;
 
+import com.devflow.config.WorkspaceState;
 import com.devflow.model.User;
+import com.devflow.model.Workspace;
+import com.devflow.service.WorkspaceService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
@@ -14,118 +23,171 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
 
-public class Sidebar extends HBox {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
+/**
+ * Phase 4 — Linear-style sidebar.
+ *
+ * <p>Old hierarchy was {@code HBox(activity-rail, panel)} — the rail held the
+ * Chats/Einstellungen/Profil items as a side rail. Phase 4 collapses the
+ * activity-rail into the panel itself: this class is now a single
+ * {@link VBox} (240 px fixed) with five regions stacked top-to-bottom:</p>
+ *
+ * <ol>
+ *   <li>Workspace switcher (44 h, hover row, click → ContextMenu).</li>
+ *   <li>1 px subtle divider.</li>
+ *   <li>Primary nav (Chats / Einstellungen).</li>
+ *   <li>Section content (chat-list <em>or</em> settings sub-nav).</li>
+ *   <li>User bar at the bottom (56 h, click → ProfileDialog).</li>
+ * </ol>
+ *
+ * <p>The Workspace ContextMenu now also carries the per-workspace
+ * "Einstellungen" entry as the last item before "Neu/Beitreten" — the
+ * Gear-Button next to the chevron is gone (spec §11). Pin/Star markers are
+ * removed from the header but kept in the dropdown rows because the spec only
+ * forbids them in the header (Q-tweak: dropdown-marker is useful, header is
+ * noise).</p>
+ */
+public class Sidebar extends VBox {
+
+    /**
+     * Logical content modes the sidebar can show. Names kept as "RailKey" for
+     * source compatibility with controllers that reference them — the
+     * activity-rail itself no longer exists.
+     */
     public enum RailKey { CHATS, SETTINGS }
 
-    // Rail
-    private final VBox rail;
-    private final Button toggleButton;
-    private final Button chatsItem;
-    private final Button settingsItem;
-    private final Button profileItem;
-    private RailKey activeKey = RailKey.CHATS;
-    private boolean expanded = true;
+    private static final int SIDEBAR_WIDTH = 240;
 
-    // Panel (chat list)
-    private final VBox panel;
-    private final Label brand;
-    private final Button newChatButton;
+    // Primary nav (Chats / Einstellungen)
+    private final Button chatsNavItem;
+    private final Button settingsNavItem;
+    private RailKey activeKey = RailKey.CHATS;
+
+    // Section content
+    private final StackPane sectionContentHost;
+    private final VBox chatsSection;
+    private final VBox settingsSection;
+    private final Label brand;          // section header label "CHATS"/"EINSTELLUNGEN"
+    private final Button newChatButton; // plus-button in the chats section header
     private final TextField searchField;
-    private final VBox searchWrap;
     private final StackPane listHost;
+    private Node chatListContent;
+
+    // Settings sub-nav (4 items: appearance / github / account / about)
+    private final VBox settingsNav;
+    private String activeSettingsSection;
+
+    // User bar
     private final Avatar userAvatar;
     private final Label usernameLabel;
     private final Label statusLabel;
-    private final Button userSettingsBtn;
+    private final HBox userBar;
 
-    // Settings-mode navigation (shown in panel when SETTINGS is active)
-    private final VBox settingsNav;
-    private Node chatListContent;
+    // Workspace switcher
+    private final WorkspaceService workspaceService = new WorkspaceService();
+    private final HBox workspaceSwitcher;
+    private final Label workspaceName;
+    private final HBox workspaceErrorBanner;
+    private final Label workspaceErrorLabel;
+    private List<Workspace> workspacesCache = new ArrayList<>();
 
+    // Callbacks
     private Runnable onChatsClick;
     private Runnable onSettingsClick;
     private Runnable onNewChat;
     private Runnable onProfileClick;
-    private java.util.function.Consumer<String> onSearch;
-    private java.util.function.Consumer<String> onSettingsSection;
-    private String activeSettingsSection;
+    private Runnable onNewWorkspace;
+    private Runnable onJoinWorkspace;
+    private Runnable onWorkspaceSettings;
+    private Consumer<String> onSearch;
+    private Consumer<String> onSettingsSection;
+
+    // External listener tracked so we can detach it on disposal.
+    private final Consumer<Workspace> workspaceStateListener;
 
     public Sidebar() {
-        getStyleClass().add("sidebar-root");
+        getStyleClass().add("sidebar");
+        setPrefWidth(SIDEBAR_WIDTH);
+        setMinWidth(SIDEBAR_WIDTH);
+        setMaxWidth(SIDEBAR_WIDTH);
 
-        // ── Rail ──
-        rail = new VBox(6);
-        rail.getStyleClass().add("activity-rail");
-        rail.setPadding(new Insets(10, 8, 10, 8));
+        // ── 1) Workspace switcher (Polish-Pass §3: BrandMark + name + chevron). ──
+        // Spec: 46 h row, 0/14 padding, 9 gap, name in 14/500, chevron 11 px.
+        BrandMark sidebarBrand = new BrandMark(22);
+        workspaceName = new Label("—");
+        workspaceName.getStyleClass().add("workspace-switcher-name");
+        FontIcon workspaceChev = new FontIcon(Feather.CHEVRON_DOWN);
+        workspaceChev.getStyleClass().add("workspace-switcher-chevron");
+        Region wsSpacer = new Region();
+        HBox.setHgrow(wsSpacer, Priority.ALWAYS);
+        workspaceSwitcher = new HBox(9, sidebarBrand, workspaceName, wsSpacer, workspaceChev);
+        workspaceSwitcher.getStyleClass().add("workspace-switcher");
+        workspaceSwitcher.setAlignment(Pos.CENTER_LEFT);
+        workspaceSwitcher.setPadding(new Insets(0, 14, 0, 14));
+        workspaceSwitcher.setMinHeight(46);
+        workspaceSwitcher.setPrefHeight(46);
+        workspaceSwitcher.setMaxHeight(46);
+        workspaceSwitcher.setOnMouseClicked(e -> showWorkspaceMenu());
 
-        toggleButton = new Button();
-        toggleButton.setGraphic(Icons.menu());
-        toggleButton.getStyleClass().add("rail-toggle");
-        toggleButton.setTooltip(new Tooltip("Seitenleiste ein-/ausklappen"));
-        toggleButton.setFocusTraversable(false);
-        toggleButton.setOnAction(e -> setExpanded(!expanded));
+        // Error banner shown if listWorkspaces() fails on mount/refresh.
+        workspaceErrorLabel = new Label("Workspaces konnten nicht geladen werden — bitte Verbindung prüfen.");
+        workspaceErrorLabel.getStyleClass().addAll("workspace-error-label", "t-caption");
+        workspaceErrorLabel.setWrapText(true);
+        workspaceErrorBanner = new HBox(workspaceErrorLabel);
+        workspaceErrorBanner.getStyleClass().add("workspace-error-banner");
+        workspaceErrorBanner.setPadding(new Insets(6, 12, 6, 12));
+        workspaceErrorBanner.setVisible(false);
+        workspaceErrorBanner.setManaged(false);
 
-        // SVG line-art icons render identically on every platform.
-        chatsItem = buildRailItem(Icons.messageSquare(), "Chats");
-        chatsItem.setOnAction(e -> activate(RailKey.CHATS));
+        // ── 2) Subtle divider between switcher and primary nav. ──
+        Region dividerTop = sidebarDivider();
 
-        settingsItem = buildRailItem(Icons.settings(), "Einstellungen");
-        settingsItem.setOnAction(e -> activate(RailKey.SETTINGS));
+        // ── 3) Primary nav: Chats / Einstellungen. ──
+        chatsNavItem = buildNavItem(Feather.MESSAGE_SQUARE, "Chats", false);
+        chatsNavItem.setOnAction(e -> activate(RailKey.CHATS));
+        settingsNavItem = buildNavItem(Feather.SETTINGS, "Einstellungen", false);
+        settingsNavItem.setOnAction(e -> activate(RailKey.SETTINGS));
+        VBox primaryNav = new VBox(2, chatsNavItem, settingsNavItem);
+        primaryNav.setPadding(new Insets(8, 8, 8, 8));
 
-        Region grow = new Region();
-        VBox.setVgrow(grow, Priority.ALWAYS);
+        // ── 4) Section content. ──
+        // Section header label — same node moves between chatsSection /
+        // settingsSection so we can rebrand it cheaply on activate().
+        brand = new Label("CHATS");
+        brand.getStyleClass().addAll("sidebar-section-header-label", "t-section-header");
 
-        profileItem = buildRailItem(Icons.user(), "Profil");
-        profileItem.setOnAction(e -> { if (onProfileClick != null) onProfileClick.run(); });
-
-        rail.getChildren().addAll(toggleButton, chatsItem, settingsItem, grow, profileItem);
-
-        // ── Panel ──
-        panel = new VBox();
-        panel.getStyleClass().add("sidebar");
-        panel.setPrefWidth(300);
-        panel.setMinWidth(260);
-        panel.setMaxWidth(360);
-
-        brand = new Label("Chats");
-        brand.getStyleClass().add("sidebar-brand");
-
+        // Plus button shown in the Chats section header only.
+        FontIcon plusIcon = new FontIcon(Feather.PLUS);
+        plusIcon.getStyleClass().add("sidebar-new-chat-icon");
         newChatButton = new Button();
-        newChatButton.setGraphic(Icons.plus());
-        newChatButton.getStyleClass().add("sidebar-new-chat-btn");
+        newChatButton.setGraphic(plusIcon);
+        newChatButton.getStyleClass().addAll("button-flat", "sidebar-new-chat-btn", "button-compact");
         newChatButton.setTooltip(new Tooltip("Neuer Chat"));
         newChatButton.setFocusTraversable(false);
         newChatButton.setOnAction(e -> { if (onNewChat != null) onNewChat.run(); });
 
-        Region headerSpacer = new Region();
-        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
-        HBox header = new HBox(10, brand, headerSpacer, newChatButton);
-        header.getStyleClass().add("sidebar-header");
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(14, 14, 12, 16));
+        Region brandSpacer = new Region();
+        HBox.setHgrow(brandSpacer, Priority.ALWAYS);
+        HBox sectionHeader = new HBox(8, brand, brandSpacer, newChatButton);
+        sectionHeader.getStyleClass().add("sidebar-section-header");
+        sectionHeader.setAlignment(Pos.CENTER_LEFT);
+        // Polish-Pass §4: 14/14/6 — slightly more breathing room on top.
+        sectionHeader.setPadding(new Insets(14, 14, 6, 14));
 
-        // Workspace switcher — single-workspace placeholder. Clicking is a no-op
-        // for now; when multi-workspace ships, this becomes a popover menu.
-        Label workspaceIcon = new Label("\u25A3"); // ▣ window-like marker
-        workspaceIcon.getStyleClass().add("workspace-switcher-icon");
-        Label workspaceName = new Label("DevFlow Workspace");
-        workspaceName.getStyleClass().add("workspace-switcher-name");
-        Label workspaceChev = new Label("\u25BE"); // ▾
-        workspaceChev.getStyleClass().add("workspace-switcher-chevron");
-        Region wsSpacer = new Region();
-        HBox.setHgrow(wsSpacer, Priority.ALWAYS);
-        HBox workspaceSwitcher = new HBox(8, workspaceIcon, workspaceName, wsSpacer, workspaceChev);
-        workspaceSwitcher.getStyleClass().add("workspace-switcher");
-        workspaceSwitcher.setAlignment(Pos.CENTER_LEFT);
-        workspaceSwitcher.setPadding(new Insets(8, 12, 8, 12));
-
+        // Search field (kept compact at 32 h per Q15 — deliberately one tier
+        // below the standard 36 h form-input scale).
         searchField = new TextField();
         searchField.setPromptText("Chats durchsuchen…");
         searchField.getStyleClass().add("sidebar-search-field");
-        searchWrap = new VBox(searchField);
-        searchWrap.setPadding(new Insets(0, 12, 10, 12));
+        VBox searchWrap = new VBox(searchField);
+        searchWrap.setPadding(new Insets(0, 12, 8, 12));
         searchField.textProperty().addListener((obs, old, val) -> {
             if (onSearch != null) onSearch.accept(val);
         });
@@ -133,65 +195,118 @@ public class Sidebar extends HBox {
         listHost = new StackPane();
         VBox.setVgrow(listHost, Priority.ALWAYS);
 
-        // Settings navigation panel (hidden by default; shown in SETTINGS mode)
+        chatsSection = new VBox(sectionHeader, searchWrap, listHost);
+        chatsSection.getStyleClass().add("sidebar-section");
+
+        // Settings sub-nav with leading "EINSTELLUNGEN" header.
+        Label settingsBrand = new Label("EINSTELLUNGEN");
+        settingsBrand.getStyleClass().addAll("sidebar-section-header-label", "t-section-header");
+        HBox settingsHeader = new HBox(settingsBrand);
+        settingsHeader.getStyleClass().add("sidebar-section-header");
+        settingsHeader.setAlignment(Pos.CENTER_LEFT);
+        // Polish-Pass §4: same 14/14/6 as the chats section header.
+        settingsHeader.setPadding(new Insets(14, 14, 6, 14));
+
         settingsNav = new VBox(2);
-        settingsNav.getStyleClass().add("settings-nav");
-        settingsNav.setPadding(new Insets(4, 8, 8, 8));
+        settingsNav.setPadding(new Insets(0, 8, 8, 8));
         settingsNav.getChildren().addAll(
-                buildSettingsNavItem("appearance", Icons.palette(),    "Erscheinungsbild"),
-                buildSettingsNavItem("github",     Icons.github(),     "GitHub Integration"),
-                buildSettingsNavItem("account",    Icons.userCircle(), "Account"),
-                buildSettingsNavItem("about",      Icons.info(),       "Über")
+                buildSettingsNavItem("appearance", Feather.DROPLET, "Erscheinungsbild"),
+                buildSettingsNavItem("github",     Feather.GITHUB,  "GitHub Integration"),
+                buildSettingsNavItem("account",    Feather.USER,    "Account"),
+                buildSettingsNavItem("about",      Feather.INFO,    "Über")
         );
 
-        userAvatar = new Avatar("?", 36);
-        userAvatar.getStyleClass().add("avatar-clickable");
-        userAvatar.setOnMouseClicked(e -> { if (onProfileClick != null) onProfileClick.run(); });
+        settingsSection = new VBox(settingsHeader, settingsNav);
+        settingsSection.getStyleClass().add("sidebar-section");
 
+        sectionContentHost = new StackPane(chatsSection);
+        VBox.setVgrow(sectionContentHost, Priority.ALWAYS);
+
+        // ── 5) User bar (whole row clickable → ProfileDialog). ──
+        userAvatar = new Avatar("?", 32);
+        userAvatar.getStyleClass().add("avatar-clickable");
         usernameLabel = new Label("–");
-        usernameLabel.getStyleClass().add("sidebar-username");
+        usernameLabel.getStyleClass().addAll("sidebar-username", "t-body-strong");
         Circle presenceDot = new Circle(4);
         presenceDot.getStyleClass().add("sidebar-presence-online");
         statusLabel = new Label("Online");
-        statusLabel.getStyleClass().add("sidebar-status");
+        statusLabel.getStyleClass().addAll("sidebar-status", "t-caption");
         HBox statusRow = new HBox(6, presenceDot, statusLabel);
         statusRow.setAlignment(Pos.CENTER_LEFT);
         VBox userInfo = new VBox(2, usernameLabel, statusRow);
         userInfo.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 
-        // Settings access lives in the rail — no second cog here.
-        userSettingsBtn = null;
-
-        HBox userBar = new HBox(10, userAvatar, userInfo);
+        userBar = new HBox(10, userAvatar, userInfo);
         userBar.getStyleClass().add("sidebar-user-bar");
         userBar.setAlignment(Pos.CENTER_LEFT);
         userBar.setPadding(new Insets(12, 14, 12, 14));
+        userBar.setMinHeight(56);
+        userBar.setPrefHeight(56);
+        userBar.setMaxHeight(56);
+        userBar.setOnMouseClicked(e -> { if (onProfileClick != null) onProfileClick.run(); });
 
-        panel.getChildren().addAll(workspaceSwitcher, header, searchWrap, listHost, userBar);
+        // Bottom divider above user-bar (mirrors the top divider visual rhythm).
+        Region dividerBottom = sidebarDivider();
 
-        getChildren().addAll(rail, panel);
+        getChildren().addAll(
+                workspaceSwitcher,
+                workspaceErrorBanner,
+                dividerTop,
+                primaryNav,
+                sectionContentHost,
+                dividerBottom,
+                userBar
+        );
 
-        setExpanded(true);
+        applyActiveSection();
         updateActiveStyles();
-        applyPanelMode();
+
+        // React to workspace switches (any source: menu click, dialog success,
+        // programmatic). Always hop to FX before touching the view.
+        workspaceStateListener = ws -> Platform.runLater(() -> applyCurrentWorkspaceToHeader(ws));
+        WorkspaceState.getInstance().addListener(workspaceStateListener);
+        applyCurrentWorkspaceToHeader(WorkspaceState.getInstance().getCurrent());
+
+        refreshWorkspaces();
     }
 
-    private Button buildSettingsNavItem(String key, Node icon, String label) {
-        Button b = new Button();
-        b.getStyleClass().add("settings-nav-item");
-        StackPane iconHost = new StackPane(icon);
-        iconHost.getStyleClass().add("settings-nav-icon");
-        iconHost.setMinSize(18, 18);
-        iconHost.setPrefSize(18, 18);
+    // ── Builders ─────────────────────────────────────────────────────────
+
+    /** Subtle 1 px line separator used at the section boundaries. */
+    private static Region sidebarDivider() {
+        Region r = new Region();
+        r.getStyleClass().add("sidebar-section-divider");
+        r.setMinHeight(1);
+        r.setPrefHeight(1);
+        r.setMaxHeight(1);
+        return r;
+    }
+
+    /**
+     * Primary-nav button factory. Used both for the top-level nav (Chats /
+     * Einstellungen) and — with {@code indented = true} — for the four
+     * settings sub-tabs that appear when SETTINGS is the active mode.
+     */
+    private Button buildNavItem(Ikon glyph, String label, boolean indented) {
+        FontIcon icon = new FontIcon(glyph);
+        icon.getStyleClass().add("sidebar-nav-fonticon");
         Label textLbl = new Label(label);
-        textLbl.getStyleClass().add("settings-nav-label");
-        HBox content = new HBox(12, iconHost, textLbl);
+        textLbl.getStyleClass().addAll("sidebar-nav-label", "t-body-strong");
+        HBox content = new HBox(10, icon, textLbl);
         content.setAlignment(Pos.CENTER_LEFT);
+        Button b = new Button();
         b.setGraphic(content);
+        b.getStyleClass().add("sidebar-nav-item");
+        if (indented) b.getStyleClass().add("indented");
         b.setMaxWidth(Double.MAX_VALUE);
         b.setFocusTraversable(false);
-        b.getProperties().put("key", key);
+        return b;
+    }
+
+    private Button buildSettingsNavItem(String key, Ikon glyph, String label) {
+        Button b = buildNavItem(glyph, label, true);
+        b.getProperties().put("settings-key", key);
         b.setOnAction(e -> {
             activeSettingsSection = key;
             updateSettingsNavStyles();
@@ -200,90 +315,55 @@ public class Sidebar extends HBox {
         return b;
     }
 
-    private void updateSettingsNavStyles() {
-        for (Node n : settingsNav.getChildren()) {
-            if (!(n instanceof Button b)) continue;
-            b.getStyleClass().remove("settings-nav-item-active");
-            Object k = b.getProperties().get("key");
-            if (k != null && k.equals(activeSettingsSection)) {
-                b.getStyleClass().add("settings-nav-item-active");
-            }
-        }
-    }
+    // ── Active-state plumbing ────────────────────────────────────────────
 
-    private void applyPanelMode() {
-        boolean isSettings = activeKey == RailKey.SETTINGS;
-        brand.setText(isSettings ? "Einstellungen" : "Chats");
-        newChatButton.setVisible(!isSettings);
-        newChatButton.setManaged(!isSettings);
-        searchWrap.setVisible(!isSettings);
-        searchWrap.setManaged(!isSettings);
-        if (isSettings) {
-            if (activeSettingsSection == null) activeSettingsSection = "appearance";
-            updateSettingsNavStyles();
-            listHost.getChildren().setAll(settingsNav);
-        } else if (chatListContent != null) {
-            listHost.getChildren().setAll(chatListContent);
-        } else {
-            listHost.getChildren().clear();
-        }
-    }
-
-    private Button buildRailItem(Node icon, String label) {
-        Button b = new Button();
-        b.getStyleClass().add("rail-item");
-        StackPane iconHost = new StackPane(icon);
-        iconHost.getStyleClass().add("rail-icon");
-        iconHost.setMinSize(20, 20);
-        iconHost.setPrefSize(20, 20);
-        Label textLbl = new Label(label);
-        textLbl.getStyleClass().add("label");
-        HBox content = new HBox(12, iconHost, textLbl);
-        content.setAlignment(Pos.CENTER_LEFT);
-        b.setGraphic(content);
-        b.setTooltip(new Tooltip(label));
-        b.setMaxWidth(Double.MAX_VALUE);
-        b.setFocusTraversable(false);
-        b.getProperties().put("text", textLbl);
-        return b;
+    /** Set which section ({@link RailKey#CHATS} or {@link RailKey#SETTINGS}) is shown. */
+    public void setActive(RailKey key) {
+        this.activeKey = key;
+        updateActiveStyles();
+        applyActiveSection();
     }
 
     private void activate(RailKey key) {
-        this.activeKey = key;
-        updateActiveStyles();
-        applyPanelMode();
+        setActive(key);
         if (key == RailKey.CHATS && onChatsClick != null) onChatsClick.run();
         if (key == RailKey.SETTINGS && onSettingsClick != null) onSettingsClick.run();
     }
 
     private void updateActiveStyles() {
-        chatsItem.getStyleClass().remove("rail-item-active");
-        settingsItem.getStyleClass().remove("rail-item-active");
-        if (activeKey == RailKey.CHATS) chatsItem.getStyleClass().add("rail-item-active");
-        if (activeKey == RailKey.SETTINGS) settingsItem.getStyleClass().add("rail-item-active");
+        chatsNavItem.getStyleClass().remove("sidebar-nav-item-active");
+        settingsNavItem.getStyleClass().remove("sidebar-nav-item-active");
+        if (activeKey == RailKey.CHATS) chatsNavItem.getStyleClass().add("sidebar-nav-item-active");
+        if (activeKey == RailKey.SETTINGS) settingsNavItem.getStyleClass().add("sidebar-nav-item-active");
     }
 
-    public void setExpanded(boolean expanded) {
-        this.expanded = expanded;
-        double width = expanded ? 196 : 60;
-        rail.setPrefWidth(width);
-        rail.setMinWidth(width);
-        rail.setMaxWidth(width);
-        for (Node n : new Node[] { chatsItem, settingsItem, profileItem }) {
-            Label text = (Label) ((Button) n).getProperties().get("text");
-            if (text != null) {
-                text.setVisible(expanded);
-                text.setManaged(expanded);
+    private void applyActiveSection() {
+        if (activeKey == RailKey.SETTINGS) {
+            if (activeSettingsSection == null) activeSettingsSection = "appearance";
+            updateSettingsNavStyles();
+            sectionContentHost.getChildren().setAll(settingsSection);
+        } else {
+            if (chatListContent != null) {
+                listHost.getChildren().setAll(chatListContent);
+            } else {
+                listHost.getChildren().clear();
+            }
+            sectionContentHost.getChildren().setAll(chatsSection);
+        }
+    }
+
+    private void updateSettingsNavStyles() {
+        for (Node n : settingsNav.getChildren()) {
+            if (!(n instanceof Button b)) continue;
+            b.getStyleClass().remove("sidebar-nav-item-active");
+            Object k = b.getProperties().get("settings-key");
+            if (k != null && k.equals(activeSettingsSection)) {
+                b.getStyleClass().add("sidebar-nav-item-active");
             }
         }
-        toggleButton.setGraphic(expanded ? Icons.chevronLeft() : Icons.menu());
     }
 
-    public void setActive(RailKey key) {
-        this.activeKey = key;
-        updateActiveStyles();
-        applyPanelMode();
-    }
+    // ── External wiring (controller-side) ────────────────────────────────
 
     public void setListNode(Node node) {
         this.chatListContent = node;
@@ -297,7 +377,7 @@ public class Sidebar extends HBox {
         updateSettingsNavStyles();
     }
 
-    public void setBrand(String text) { brand.setText(text); }
+    public TextField getSearchField() { return searchField; }
 
     public void setCurrentUser(User user) {
         if (user == null) {
@@ -309,12 +389,162 @@ public class Sidebar extends HBox {
         }
     }
 
-    public TextField getSearchField() { return searchField; }
+    public void setOnChatsClick(Runnable r)            { this.onChatsClick = r; }
+    public void setOnSettingsClick(Runnable r)         { this.onSettingsClick = r; }
+    public void setOnNewChat(Runnable r)               { this.onNewChat = r; }
+    public void setOnProfileClick(Runnable r)          { this.onProfileClick = r; }
+    public void setOnSearch(Consumer<String> c)        { this.onSearch = c; }
+    public void setOnSettingsSection(Consumer<String> c) { this.onSettingsSection = c; }
 
-    public void setOnChatsClick(Runnable r) { this.onChatsClick = r; }
-    public void setOnSettingsClick(Runnable r) { this.onSettingsClick = r; }
-    public void setOnNewChat(Runnable r) { this.onNewChat = r; }
-    public void setOnProfileClick(Runnable r) { this.onProfileClick = r; }
-    public void setOnSearch(java.util.function.Consumer<String> c) { this.onSearch = c; }
-    public void setOnSettingsSection(java.util.function.Consumer<String> c) { this.onSettingsSection = c; }
+    public void setWorkspaceActions(Runnable onNewWorkspace, Runnable onJoinWorkspace) {
+        this.onNewWorkspace = onNewWorkspace;
+        this.onJoinWorkspace = onJoinWorkspace;
+    }
+
+    public void setOnWorkspaceSettings(Runnable onWorkspaceSettings) {
+        this.onWorkspaceSettings = onWorkspaceSettings;
+    }
+
+    // ── Workspace switcher ───────────────────────────────────────────────
+
+    public void refreshWorkspaces() {
+        workspaceService.listWorkspaces()
+                .whenComplete((list, err) -> Platform.runLater(() -> {
+                    if (err != null) {
+                        showWorkspaceError(true);
+                        if (WorkspaceState.getInstance().getCurrent() == null) {
+                            WorkspaceState.getInstance().setCurrent(placeholderWorkspace());
+                        }
+                        return;
+                    }
+                    showWorkspaceError(false);
+                    workspacesCache = list != null ? list : new ArrayList<>();
+                    Workspace current = WorkspaceState.getInstance().getCurrent();
+                    boolean stillValid = current != null && workspacesCache.stream()
+                            .anyMatch(w -> w.getId() == current.getId());
+                    if (!stillValid) {
+                        Workspace personal = workspacesCache.stream()
+                                .filter(Workspace::isPersonal)
+                                .findFirst()
+                                .orElse(workspacesCache.isEmpty() ? placeholderWorkspace() : workspacesCache.get(0));
+                        WorkspaceState.getInstance().setCurrent(personal);
+                    } else {
+                        Workspace refreshed = workspacesCache.stream()
+                                .filter(w -> w.getId() == current.getId())
+                                .findFirst()
+                                .orElse(current);
+                        WorkspaceState.getInstance().setCurrent(refreshed);
+                    }
+                }));
+    }
+
+    /**
+     * Open the workspace dropdown. Order: workspace rows → separator →
+     * "Workspace-Einstellungen" (Q-tweak: per-workspace settings live in the
+     * dropdown now, not as a header gear) → "Neuer Workspace" / "Workspace
+     * beitreten". The Settings entry is disabled when the active workspace is
+     * the placeholder ({@code id <= 0}).
+     */
+    private void showWorkspaceMenu() {
+        ContextMenu menu = new ContextMenu();
+
+        Workspace current = WorkspaceState.getInstance().getCurrent();
+        long currentId = current != null ? current.getId() : -1L;
+
+        if (workspacesCache.isEmpty()) {
+            MenuItem empty = new MenuItem("Keine Workspaces verfügbar");
+            empty.setDisable(true);
+            menu.getItems().add(empty);
+        } else {
+            for (Workspace ws : workspacesCache) {
+                MenuItem item = buildWorkspaceMenuItem(ws, ws.getId() == currentId);
+                menu.getItems().add(item);
+            }
+        }
+
+        menu.getItems().add(new SeparatorMenuItem());
+
+        // Per-workspace Einstellungen — disabled while the placeholder is active.
+        MenuItem settingsItem = buildIconMenuItem(Feather.SETTINGS, "Workspace-Einstellungen");
+        settingsItem.setDisable(current == null || current.getId() <= 0);
+        settingsItem.setOnAction(e -> { if (onWorkspaceSettings != null) onWorkspaceSettings.run(); });
+
+        MenuItem newItem  = buildIconMenuItem(Feather.PLUS,      "Neuer Workspace");
+        newItem.setOnAction(e -> { if (onNewWorkspace != null) onNewWorkspace.run(); });
+
+        MenuItem joinItem = buildIconMenuItem(Feather.LOG_IN,    "Workspace beitreten");
+        joinItem.setOnAction(e -> { if (onJoinWorkspace != null) onJoinWorkspace.run(); });
+
+        menu.getItems().addAll(settingsItem, newItem, joinItem);
+
+        menu.show(workspaceSwitcher, Side.BOTTOM, 0, 0);
+    }
+
+    private MenuItem buildIconMenuItem(Ikon glyph, String label) {
+        FontIcon ic = new FontIcon(glyph);
+        ic.getStyleClass().add("workspace-menu-action-icon");
+        Label name = new Label(label);
+        name.getStyleClass().addAll("workspace-menu-name", "t-body");
+        HBox row = new HBox(8, ic, name);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMinWidth(220);
+        CustomMenuItem item = new CustomMenuItem(row, true);
+        item.setHideOnClick(true);
+        return item;
+    }
+
+    private MenuItem buildWorkspaceMenuItem(Workspace ws, boolean isCurrent) {
+        // Pin/Star marker stays in the dropdown row only — useful as a "this is
+        // the protected personal workspace" cue. Spec §11 forbids it in the
+        // header, not in the menu.
+        StackPane pinHost = new StackPane();
+        pinHost.setMinWidth(18);
+        pinHost.setPrefWidth(18);
+        if (ws.isPersonal()) {
+            FontIcon pin = new FontIcon(Feather.STAR);
+            pin.getStyleClass().add("workspace-menu-pin");
+            pinHost.getChildren().add(pin);
+        }
+        Label name = new Label(ws.getName());
+        name.getStyleClass().addAll("workspace-menu-name", "t-body");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        StackPane checkHost = new StackPane();
+        checkHost.setMinWidth(14);
+        checkHost.setPrefWidth(14);
+        if (isCurrent) {
+            FontIcon check = new FontIcon(Feather.CHECK);
+            check.getStyleClass().add("workspace-menu-check");
+            checkHost.getChildren().add(check);
+        }
+        HBox row = new HBox(8, pinHost, name, spacer, checkHost);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMinWidth(220);
+
+        CustomMenuItem item = new CustomMenuItem(row, true);
+        item.setHideOnClick(true);
+        item.setOnAction(e -> WorkspaceState.getInstance().setCurrent(ws));
+        return item;
+    }
+
+    private void applyCurrentWorkspaceToHeader(Workspace ws) {
+        if (ws == null) {
+            workspaceName.setText("—");
+            return;
+        }
+        workspaceName.setText(ws.getName());
+    }
+
+    private void showWorkspaceError(boolean visible) {
+        workspaceErrorBanner.setVisible(visible);
+        workspaceErrorBanner.setManaged(visible);
+    }
+
+    private static Workspace placeholderWorkspace() {
+        Workspace ws = new Workspace();
+        ws.setId(-1);
+        ws.setName("—");
+        ws.setPersonal(false);
+        return ws;
+    }
 }

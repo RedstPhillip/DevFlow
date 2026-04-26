@@ -1,5 +1,6 @@
 package com.devflow.view;
 
+import com.devflow.config.ConnectionState;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -10,6 +11,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.function.Consumer;
 
 public class CustomTitleBar extends HBox {
 
@@ -18,6 +23,9 @@ public class CustomTitleBar extends HBox {
     private double lastX, lastY, lastWidth, lastHeight;
 
     private final Label subtitleLabel;
+    private final Label offlineLabel;
+    /** Held so we can detach on {@link #dispose()} (logout/login cycles re-create the bar). */
+    private final Consumer<Boolean> connectionListener;
 
     public CustomTitleBar(Stage stage, String title) {
         getStyleClass().add("titlebar");
@@ -31,20 +39,37 @@ public class CustomTitleBar extends HBox {
         subtitleLabel.getStyleClass().add("titlebar-subtitle");
         subtitleLabel.setPadding(new Insets(0, 0, 0, 12));
 
+        // Disconnect indicator — visible only when offline so it grabs the
+        // user's eye exactly when something is wrong, then disappears once
+        // the next request succeeds. Tooltip explains the cause without
+        // bloating the visible label.
+        offlineLabel = new Label("\u2022 Offline");
+        offlineLabel.getStyleClass().add("titlebar-offline");
+        offlineLabel.setTooltip(new Tooltip("Keine Verbindung zum Server. Die App versucht es erneut, sobald wieder eine Anfrage laeuft."));
+        offlineLabel.setPadding(new Insets(0, 0, 0, 12));
+        boolean initiallyOnline = ConnectionState.getInstance().isOnline();
+        offlineLabel.setVisible(!initiallyOnline);
+        offlineLabel.setManaged(!initiallyOnline);
+        connectionListener = online -> {
+            offlineLabel.setVisible(!online);
+            offlineLabel.setManaged(!online);
+        };
+        ConnectionState.getInstance().addListener(connectionListener);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button minBtn = buildButton("\u2013", "Minimieren");
+        Button minBtn = buildIconButton(Feather.MINUS, "Minimieren");
         minBtn.setOnAction(e -> stage.setIconified(true));
 
-        Button maxBtn = buildButton("\u25A1", "Maximieren");
+        Button maxBtn = buildIconButton(Feather.SQUARE, "Maximieren");
         maxBtn.setOnAction(e -> toggleMaximize(stage, maxBtn));
 
-        Button closeBtn = buildButton("\u2715", "Schliessen");
+        Button closeBtn = buildIconButton(Feather.X, "Schliessen");
         closeBtn.getStyleClass().add("titlebar-button-close");
         closeBtn.setOnAction(e -> stage.close());
 
-        getChildren().addAll(brand, subtitleLabel, spacer, minBtn, maxBtn, closeBtn);
+        getChildren().addAll(brand, subtitleLabel, offlineLabel, spacer, minBtn, maxBtn, closeBtn);
 
         // Drag window
         setOnMousePressed(e -> {
@@ -72,8 +97,11 @@ public class CustomTitleBar extends HBox {
         subtitleLabel.setText(text == null ? "" : text);
     }
 
-    private Button buildButton(String text, String tooltip) {
-        Button btn = new Button(text);
+    private Button buildIconButton(Feather icon, String tooltip) {
+        FontIcon fontIcon = new FontIcon(icon);
+        fontIcon.getStyleClass().add("titlebar-icon");
+        Button btn = new Button();
+        btn.setGraphic(fontIcon);
         btn.getStyleClass().add("titlebar-button");
         btn.setTooltip(new Tooltip(tooltip));
         btn.setFocusTraversable(false);
@@ -93,7 +121,10 @@ public class CustomTitleBar extends HBox {
             stage.setY(bounds.getMinY());
             stage.setWidth(bounds.getWidth());
             stage.setHeight(bounds.getHeight());
-            maxBtn.setText("\u2750");
+            // Visual hint that the button now restores. Feather doesn't ship a
+            // dedicated "windows-restore" glyph, so COPY (two stacked squares)
+            // is the closest analogue and reads correctly at 14 px.
+            ((FontIcon) maxBtn.getGraphic()).setIconCode(Feather.COPY);
         }
     }
 
@@ -104,12 +135,21 @@ public class CustomTitleBar extends HBox {
             stage.setWidth(lastWidth);
             stage.setHeight(lastHeight);
         }
-        maxBtn.setText("\u25A1");
+        ((FontIcon) maxBtn.getGraphic()).setIconCode(Feather.SQUARE);
     }
 
     private boolean isPseudoMaximized(Stage stage) {
         var bounds = Screen.getPrimary().getVisualBounds();
         return Math.abs(stage.getWidth() - bounds.getWidth()) < 2
                 && Math.abs(stage.getHeight() - bounds.getHeight()) < 2;
+    }
+
+    /**
+     * Detach the {@link ConnectionState} listener. Should be called when the
+     * title bar is being replaced (login/logout cycle) so the singleton
+     * doesn't accumulate stale listeners.
+     */
+    public void dispose() {
+        ConnectionState.getInstance().removeListener(connectionListener);
     }
 }

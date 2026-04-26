@@ -132,3 +132,11 @@
 .chat-send-btn:hover  { -fx-background-color: -df-primary-hover; }
 .chat-send-btn:pressed{ -fx-background-color: -df-primary-press; }
 .chat-send-btn:disabled { -fx-opacity: 0.5; }
+
+/* Inline send glyph — small enough not to overpower the label, white to
+   sit on the primary fill, and graphic-text-gap (set in code via Button)
+   isn't needed since Button auto-spaces graphic + text. */
+.chat-send-btn .chat-send-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: -df-primary-foreground;
+}

@@ -12,6 +12,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class ChatView extends VBox {
 
@@ -42,10 +44,15 @@ public class ChatView extends VBox {
         headerText.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(headerText, Priority.ALWAYS);
 
+        // Phase 3 P5: chat-header info button uses MORE_HORIZONTAL so the
+        // glyph reads as "open menu / more" rather than "settings cog" — the
+        // sidebar already owns the cog and the dialog it opens is per-chat.
+        FontIcon infoIcon = new FontIcon(Feather.MORE_HORIZONTAL);
+        infoIcon.getStyleClass().add("chat-header-btn-icon");
         infoButton = new Button();
-        infoButton.setGraphic(Icons.settings());
+        infoButton.setGraphic(infoIcon);
         infoButton.getStyleClass().add("chat-header-btn");
-        infoButton.setTooltip(new Tooltip("Gruppen-Einstellungen"));
+        infoButton.setTooltip(new Tooltip("Gruppenchat-Einstellungen"));
         infoButton.setVisible(false);
         infoButton.setManaged(false);
 
@@ -79,7 +86,11 @@ public class ChatView extends VBox {
         inputField.getStyleClass().add("chat-input");
         HBox.setHgrow(inputField, Priority.ALWAYS);
 
-        sendButton = new Button("Senden");
+        // Glyph + label: the Feather paper-plane reads as "send" at a glance,
+        // the German label keeps screen readers and i18n-conscious users happy.
+        FontIcon sendIcon = new FontIcon(Feather.SEND);
+        sendIcon.getStyleClass().add("chat-send-icon");
+        sendButton = new Button("Senden", sendIcon);
         sendButton.getStyleClass().add("chat-send-btn");
 
         HBox inputBar = new HBox(10, inputField, sendButton);

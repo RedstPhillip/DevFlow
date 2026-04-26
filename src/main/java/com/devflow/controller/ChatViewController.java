@@ -7,7 +7,9 @@ import com.devflow.model.User;
 import com.devflow.service.MessageService;
 import com.devflow.view.Avatar;
 import com.devflow.view.ChatView;
+import com.devflow.view.EmptyState;
 import com.devflow.view.MessageBubble;
+import org.kordamp.ikonli.feather.Feather;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -21,7 +23,7 @@ public class ChatViewController {
     private final User currentUser;
     private Timeline pollingTimeline;
     private long lastMessageId = 0;
-    private Runnable onOpenGroupSettings;
+    private Runnable onOpenGroupChatSettings;
     /** True between construction and dispose(); guards async callbacks against a detached view. */
     private volatile boolean active = true;
 
@@ -36,11 +38,11 @@ public class ChatViewController {
         loadMessages();
     }
 
-    public void setOnOpenGroupSettings(Runnable r) {
-        this.onOpenGroupSettings = r;
-        view.getInfoButton().setVisible(chat.isGroup());
-        view.getInfoButton().setManaged(chat.isGroup());
-        view.getInfoButton().setOnAction(e -> { if (onOpenGroupSettings != null) onOpenGroupSettings.run(); });
+    public void setOnOpenGroupChatSettings(Runnable r) {
+        this.onOpenGroupChatSettings = r;
+        view.getInfoButton().setVisible(chat.isGroupChat());
+        view.getInfoButton().setManaged(chat.isGroupChat());
+        view.getInfoButton().setOnAction(e -> { if (onOpenGroupChatSettings != null) onOpenGroupChatSettings.run(); });
     }
 
     public void refreshFrom(Chat updated) {
@@ -55,7 +57,7 @@ public class ChatViewController {
         Avatar avatar = new Avatar(displayName, 40);
         view.getAvatarHost().getChildren().setAll(avatar);
 
-        if (chat.isGroup()) {
+        if (chat.isGroupChat()) {
             int count = chat.getParticipants() == null ? 0 : chat.getParticipants().size();
             view.getHeaderStatus().setText(count + " Mitglieder");
             view.getHeaderStatus().getStyleClass().remove("chat-header-status-online");
@@ -113,9 +115,16 @@ public class ChatViewController {
                 .thenAcceptAsync(messages -> {
                     if (!active) return;
                     view.getMessagesBox().getChildren().clear();
+                    if (messages.isEmpty()) {
+                        // Phase 3 P2: show a differentiated empty-state instead of an
+                        // empty pane. Wording depends on chat type and ownership so the
+                        // copy reflects "context I just walked into" vs "context I created".
+                        view.getMessagesBox().getChildren().add(buildChatEmptyState());
+                        return;
+                    }
                     long previousSender = -1;
                     for (Message msg : messages) {
-                        boolean showSender = chat.isGroup() && msg.getTransmitterId() != previousSender
+                        boolean showSender = chat.isGroupChat() && msg.getTransmitterId() != previousSender
                                 && msg.getTransmitterId() != currentUser.getId();
                         appendMessage(msg, showSender);
                         previousSender = msg.getTransmitterId();
@@ -128,6 +137,35 @@ public class ChatViewController {
                     System.err.println("Failed to load messages: " + ex.getMessage());
                     return null;
                 });
+    }
+
+    /**
+     * Build the "no messages yet" placeholder for the current chat. Wording is
+     * differentiated per the audit's P2 acceptance criteria:
+     *   – DM:                 "Das ist der Anfang deiner Unterhaltung mit X"
+     *   – Group I created:    "Du hast diese Gruppe erstellt …"
+     *   – Group I joined:     "Du bist dieser Gruppe beigetreten …"
+     */
+    private EmptyState buildChatEmptyState() {
+        String title;
+        String subtitle;
+        if (chat.isGroupChat()) {
+            boolean ownedByMe = chat.getOwnerId() != null && chat.getOwnerId() == currentUser.getId();
+            String name = chat.getDisplayName(currentUser.getId());
+            if (ownedByMe) {
+                title = "Du hast diese Gruppe erstellt";
+                subtitle = "Sende die erste Nachricht in „" + name + "“ um die Unterhaltung zu starten.";
+            } else {
+                title = "Du bist dieser Gruppe beigetreten";
+                subtitle = "Schreibe eine Nachricht in „" + name + "“ — alle Mitglieder sehen sie.";
+            }
+        } else {
+            User other = chat.getOtherParticipant(currentUser.getId());
+            String name = other != null ? other.getUsername() : "diesem Kontakt";
+            title = "Das ist der Anfang deiner Unterhaltung mit " + name;
+            subtitle = "Sage Hallo — deine Nachricht ist nur für euch beide sichtbar.";
+        }
+        return new EmptyState(Feather.MESSAGE_CIRCLE, title, subtitle);
     }
 
     private void pollNewMessages() {
@@ -149,14 +187,21 @@ public class ChatViewController {
     }
 
     private void appendMessage(Message message) {
-        appendMessage(message, chat.isGroup() && message.getTransmitterId() != currentUser.getId());
+        appendMessage(message, chat.isGroupChat() && message.getTransmitterId() != currentUser.getId());
     }
 
     private void appendMessage(Message message, boolean showSender) {
+        // If the empty-state placeholder is up, drop it before adding the
+        // first real bubble — otherwise the placeholder would push the bubble
+        // off-frame on the first send.
+        var children = view.getMessagesBox().getChildren();
+        if (!children.isEmpty() && children.get(0) instanceof EmptyState) {
+            children.clear();
+        }
         boolean isOwn = message.getTransmitterId() == currentUser.getId();
         User sender = findUser(message.getTransmitterId());
         MessageBubble bubble = new MessageBubble(message, isOwn, sender, showSender);
-        view.getMessagesBox().getChildren().add(bubble);
+        children.add(bubble);
     }
 
     private User findUser(long id) {

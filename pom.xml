@@ -13,6 +13,7 @@
         <javafx.version>21.0.2</javafx.version>
         <atlantafx.version>2.0.1</atlantafx.version>
         <controlsfx.version>11.2.1</controlsfx.version>
+        <ikonli.version>12.3.1</ikonli.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,20 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.11.0</version>
+        </dependency>
+        <!-- Icon font integration. ikonli-javafx is the JavaFX bridge; the
+             feather pack supplies the same line-style icons the existing
+             SVG Icons class is modelled on, so the visual language stays
+             cohesive when both are used side-by-side. -->
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+            <version>${ikonli.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-feather-pack</artifactId>
+            <version>${ikonli.version}</version>
         </dependency>
     </dependencies>
 

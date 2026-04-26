@@ -1,5 +1,6 @@
 package com.devflow.view;
 
+import atlantafx.base.theme.Styles;
 import com.devflow.model.User;
 import com.devflow.service.UserService;
 import javafx.application.Platform;
@@ -25,15 +26,15 @@ public class ProfileDialog extends VBox {
                          UserService userService, User currentUser,
                          Consumer<User> onUpdated) {
         getStyleClass().add("modal-card");
-        setMaxWidth(420);
-        setPadding(new Insets(20, 22, 18, 22));
-        setSpacing(14);
+        // Phase 4 §8 + Polish-Pass §4: width 480, padding 28, spacing 16.
+        setMaxWidth(480);
+        setPadding(new Insets(28));
+        setSpacing(16);
         setAlignment(Pos.TOP_LEFT);
 
         Label title = new Label("Profil");
-        title.getStyleClass().add("modal-title");
-        Button closeBtn = new Button("\u2715");
-        closeBtn.getStyleClass().add("modal-close-btn");
+        title.getStyleClass().addAll("modal-title", "t-card-title", Styles.TITLE_4, Styles.TEXT_BOLD);
+        ModalCloseButton closeBtn = new ModalCloseButton(null); // wired below once overlay exists
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
         HBox header = new HBox(10, title, sp, closeBtn);
@@ -45,28 +46,35 @@ public class ProfileDialog extends VBox {
         avatarRow.setPadding(new Insets(8, 0, 8, 0));
 
         Label hint = new Label("Dein Avatar wird aus deinem Benutzernamen generiert.");
-        hint.getStyleClass().add("modal-subtitle");
+        hint.getStyleClass().addAll("modal-subtitle", "t-caption", Styles.TEXT_MUTED);
         hint.setWrapText(true);
 
         Label nameLbl = new Label("Benutzername");
-        nameLbl.getStyleClass().add("settings-label");
+        nameLbl.getStyleClass().addAll("settings-label", "t-body-strong");
         TextField nameField = new TextField(currentUser.getUsername());
-        nameField.getStyleClass().add("text-field");
+        nameField.getStyleClass().addAll("text-field", "t-input");
 
         Label status = new Label("");
-        status.getStyleClass().add("modal-subtitle");
+        status.getStyleClass().addAll("modal-subtitle", "t-caption", Styles.TEXT_MUTED);
 
         Button save = new Button("Speichern");
-        save.getStyleClass().add("button-primary");
+        save.getStyleClass().addAll("button-primary", "button-large");
+        // Phase 4: Profil-Modal exposes an explicit Abbrechen button next to
+        // Speichern so the destructive escape path matches every other dialog
+        // in the app (Cancel-left / Primary-right pattern). Flat-button keeps
+        // "one Primary per modal".
+        Button cancel = new Button("Abbrechen");
+        cancel.getStyleClass().add("button-flat");
         Region fSp = new Region();
         HBox.setHgrow(fSp, Priority.ALWAYS);
-        HBox footer = new HBox(10, status, fSp, save);
+        HBox footer = new HBox(8, status, fSp, cancel, save);
         footer.setAlignment(Pos.CENTER_LEFT);
 
         getChildren().addAll(header, avatarRow, hint, nameLbl, nameField, footer);
 
         overlay = new ModalOverlay(host, blurTarget, this);
         closeBtn.setOnAction(e -> overlay.close());
+        cancel.setOnAction(e -> overlay.close());
 
         nameField.textProperty().addListener((o, old, val) -> avatar.setName(val));
 

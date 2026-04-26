@@ -1,5 +1,9 @@
 /* ══════════════════════════════════════════════════════════════
-   Login screen
+   Login screen — Phase 4 (Linear-style)
+   Card padding 32, fields 36 h, radius 6. Typography lives on the
+   atomic .t-* classes applied in LoginView.java; rules here keep
+   only colour / sizing responsibilities so the visual token system
+   stays the single source of truth.
    ══════════════════════════════════════════════════════════════ */
 
 .login-shell {
@@ -16,52 +20,48 @@
     -fx-border-color: -df-border;
     -fx-border-width: 1;
     -fx-border-radius: 12;
-    -fx-padding: 36 36 30 36;
+    /* Padding driven from Java (--space-6 = 32 all sides). Rule kept
+       for any future CSS-only padding override. */
 }
 
-.login-title {
-    -fx-font-size: 24px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -df-foreground;
-}
+/* Phase 4: typography via .t-page-title (title) / .t-body (subtitle) /
+   .t-caption (footer + error) applied at the call site. */
+.login-title    { -fx-text-fill: -df-foreground; }
+.login-subtitle { -fx-text-fill: -df-muted-foreground; }
 
-.login-subtitle {
-    -fx-font-size: 13px;
-    -fx-text-fill: -df-muted-foreground;
-}
-
+/* Login form inputs — 36 h via 9/12 padding, radius 6. Matches the
+   global .text-field/.password-field rule but kept explicit for the
+   .login-field class so login isn't dependent on rule load order. */
 .login-field {
     -fx-background-color: -df-input;
     -fx-text-fill: -df-foreground;
     -fx-prompt-text-fill: -df-muted-foreground;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
     -fx-border-color: -df-border;
     -fx-border-width: 1;
-    -fx-padding: 10 12;
-    -fx-font-size: 13px;
+    -fx-padding: 9 12;
 }
 .login-field:focused {
-    -fx-border-color: -df-ring;
-    -fx-border-width: 1.5;
-    -fx-padding: 9.5 11.5;
+    /* JavaFX-Equivalent zu Spec-Box-Shadow-Focus-Ring (kein nativer
+       Box-Shadow), Multi-Border mit negativem Outer-Inset. */
+    -fx-border-color: -accent-soft, -accent;
+    -fx-border-width: 2, 1;
+    -fx-border-insets: -2, 0;
+    -fx-border-radius: 8, 6;
+    -fx-padding: 9 12;
 }
 
+/* Login-specific button override — radius 6 only. Sizing/typography
+   come from .button-large + .button-primary (or .button-flat) via the
+   shared design system. */
 .login-button {
-    -fx-padding: 10 20;
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
 }
 
-.login-error {
-    -fx-text-fill: -df-destructive;
-    -fx-font-size: 12px;
-    -fx-font-weight: 500;
-}
+/* Spec §7: footer text in --text-tertiary (more muted than the standard
+   secondary). Override the .t-caption text-fill explicitly here. */
+.login-footer { -fx-text-fill: -text-tertiary; }
 
-.login-footer {
-    -fx-font-size: 11px;
-    -fx-text-fill: -df-muted-foreground;
-}
+.login-error  { -fx-text-fill: -df-destructive; }

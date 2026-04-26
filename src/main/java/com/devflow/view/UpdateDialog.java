@@ -32,17 +32,16 @@ public class UpdateDialog extends Stage {
         initOwner(owner);
         initStyle(StageStyle.TRANSPARENT);
 
-        VBox root = new VBox(14);
+        VBox root = new VBox(16);
         root.getStyleClass().add("update-dialog");
-        root.setPadding(new Insets(24));
+        // Phase 4 §8 + Polish-Pass §4: width 480, padding 28, spacing 16.
+        root.setPadding(new Insets(28));
         root.setMaxWidth(480);
 
         Label title = new Label("Update verfügbar");
-        title.getStyleClass().add("section-title");
+        title.getStyleClass().addAll("section-title", "t-card-title");
 
-        Button closeBtn = new Button("\u2715");
-        closeBtn.getStyleClass().add("modal-close-btn");
-        closeBtn.setOnAction(e -> close());
+        ModalCloseButton closeBtn = new ModalCloseButton(this::close);
 
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
@@ -51,7 +50,7 @@ public class UpdateDialog extends Stage {
 
         Label versionLabel = new Label("Aktuelle Version: " + AppConfig.APP_VERSION
                 + "  \u2192  Neue Version: " + info.version);
-        versionLabel.getStyleClass().add("muted");
+        versionLabel.getStyleClass().addAll("muted", "t-body");
 
         TextArea notes = new TextArea(info.releaseNotes != null ? info.releaseNotes : "");
         notes.setEditable(false);
@@ -65,11 +64,11 @@ public class UpdateDialog extends Stage {
         progressBar.setManaged(false);
 
         statusLabel = new Label();
-        statusLabel.getStyleClass().add("muted");
+        statusLabel.getStyleClass().addAll("muted", "t-caption");
         statusLabel.setVisible(false);
 
         updateButton = new Button("Jetzt updaten");
-        updateButton.getStyleClass().add("button-primary");
+        updateButton.getStyleClass().addAll("button-primary", "button-large");
         if (info.downloadUrl == null) {
             updateButton.setDisable(true);
             statusLabel.setText("Kein JAR-Asset im Release gefunden");
@@ -77,7 +76,7 @@ public class UpdateDialog extends Stage {
         }
 
         skipButton = new Button("Überspringen");
-        skipButton.getStyleClass().add("button-secondary");
+        skipButton.getStyleClass().add("button-flat");
         skipButton.setOnAction(e -> close());
 
         updateButton.setOnAction(e -> {
@@ -119,7 +118,7 @@ public class UpdateDialog extends Stage {
 
         Region btnSpacer = new Region();
         HBox.setHgrow(btnSpacer, Priority.ALWAYS);
-        HBox buttons = new HBox(10, statusLabel, btnSpacer, skipButton, updateButton);
+        HBox buttons = new HBox(8, statusLabel, btnSpacer, skipButton, updateButton);
         buttons.setAlignment(Pos.CENTER_LEFT);
 
         root.getChildren().addAll(header, versionLabel, notes, progressBar, buttons);

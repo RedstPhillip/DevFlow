@@ -16,9 +16,20 @@ public class MainLayout extends StackPane {
     private final StackPane contentArea;
     private final VBox frame;
 
+    /**
+     * Held refs so the four Stage-property listeners we register in
+     * {@link #attachMaximizeListener(Stage)} can be detached on
+     * {@link #dispose()}. The {@link Stage} is the JavaFX singleton window — it
+     * outlives MainLayout instances across logout/login cycles, so without
+     * explicit removal every cycle leaks four listeners forever.
+     */
+    private final Stage stage;
+    private ChangeListener<Number> maximizeListener;
+
     public MainLayout(CustomTitleBar titleBar, Sidebar sidebar, Stage stage) {
         this.titleBar = titleBar;
         this.sidebar = sidebar;
+        this.stage = stage;
         getStyleClass().add("main-layout");
 
         contentArea = new StackPane();
@@ -38,11 +49,11 @@ public class MainLayout extends StackPane {
     }
 
     private void attachMaximizeListener(Stage stage) {
-        ChangeListener<Number> listener = (obs, old, val) -> updateMaximizedState(stage);
-        stage.xProperty().addListener(listener);
-        stage.yProperty().addListener(listener);
-        stage.widthProperty().addListener(listener);
-        stage.heightProperty().addListener(listener);
+        maximizeListener = (obs, old, val) -> updateMaximizedState(stage);
+        stage.xProperty().addListener(maximizeListener);
+        stage.yProperty().addListener(maximizeListener);
+        stage.widthProperty().addListener(maximizeListener);
+        stage.heightProperty().addListener(maximizeListener);
         // Apply once the stage has dimensions
         javafx.application.Platform.runLater(() -> updateMaximizedState(stage));
     }
@@ -82,4 +93,23 @@ public class MainLayout extends StackPane {
     public CustomTitleBar getTitleBar() { return titleBar; }
     public StackPane getContentArea() { return contentArea; }
     public VBox getWindowFrame() { return frame; }
+
+    /**
+     * Detach the four Stage-property listeners this layout registered during
+     * construction. Must be called when the layout is being replaced (e.g.
+     * logout → login cycle) — the Stage is long-lived and would otherwise
+     * accumulate one listener quad per cycle.
+     */
+    public void dispose() {
+        if (maximizeListener != null) {
+            stage.xProperty().removeListener(maximizeListener);
+            stage.yProperty().removeListener(maximizeListener);
+            stage.widthProperty().removeListener(maximizeListener);
+            stage.heightProperty().removeListener(maximizeListener);
+            maximizeListener = null;
+        }
+        // Cascade: the title bar holds a ConnectionState listener that
+        // would otherwise survive a logout/login cycle on the singleton.
+        if (titleBar != null) titleBar.dispose();
+    }
 }
