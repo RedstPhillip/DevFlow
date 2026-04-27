@@ -38,9 +38,9 @@ import javafx.scene.text.FontWeight;
 public class BrandMark extends StackPane {
 
     /** Gradient stop 0 — accent. */
-    private static final Color GRADIENT_START = Color.web("#4d7cfe");
+    private static final Color GRADIENT_START = Color.web("#1f6feb");
     /** Gradient stop 1 — accent-hover (subtle 135° lift). */
-    private static final Color GRADIENT_END   = Color.web("#6491ff");
+    private static final Color GRADIENT_END   = Color.web("#4c8dff");
 
     public BrandMark(double size) {
         setMinSize(size, size);

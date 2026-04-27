@@ -1,14 +1,19 @@
 package com.devflow.controller;
 
 import com.devflow.config.AppConfig;
+import com.devflow.config.WorkspaceState;
 import com.devflow.model.Chat;
 import com.devflow.model.Message;
 import com.devflow.model.User;
+import com.devflow.model.Workspace;
 import com.devflow.service.MessageService;
 import com.devflow.view.Avatar;
 import com.devflow.view.ChatView;
 import com.devflow.view.EmptyState;
 import com.devflow.view.MessageBubble;
+import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.StackPane;
 import org.kordamp.ikonli.feather.Feather;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -52,14 +57,18 @@ public class ChatViewController {
 
     private void setupHeader() {
         String displayName = chat.getDisplayName(currentUser.getId());
+        Workspace workspace = WorkspaceState.getInstance().getCurrent();
+        String workspaceName = workspace != null && workspace.getName() != null && !workspace.getName().isBlank()
+                ? workspace.getName()
+                : "Persönlich";
         view.getHeaderName().setText(displayName);
-
-        Avatar avatar = new Avatar(displayName, 40);
-        view.getAvatarHost().getChildren().setAll(avatar);
 
         if (chat.isGroupChat()) {
             int count = chat.getParticipants() == null ? 0 : chat.getParticipants().size();
-            view.getHeaderStatus().setText(count + " Mitglieder");
+            long online = chat.getParticipants() == null ? 0 : chat.getParticipants().stream().filter(User::isOnline).count();
+            view.getAvatarHost().getChildren().setAll(buildChannelMark());
+            view.getHeaderStatus().setText(count + " Mitglieder" + (online > 0 ? " - " + online + " online" : ""));
+            view.setContextInfo(displayName, "Channel", count + " Mitglieder", workspaceName);
             view.getHeaderStatus().getStyleClass().remove("chat-header-status-online");
             if (!view.getHeaderStatus().getStyleClass().contains("chat-header-status")) {
                 view.getHeaderStatus().getStyleClass().add("chat-header-status");
@@ -67,15 +76,37 @@ public class ChatViewController {
         } else {
             User other = chat.getOtherParticipant(currentUser.getId());
             boolean online = other != null && other.isOnline();
+            Avatar avatar = new Avatar(displayName, 40);
+            view.getAvatarHost().getChildren().setAll(avatar);
             view.getHeaderStatus().setText(online ? "Online" : "Offline");
+            view.setContextInfo(displayName, "Direktnachricht", "2 Personen", workspaceName);
             view.getHeaderStatus().getStyleClass().removeAll("chat-header-status", "chat-header-status-online");
             view.getHeaderStatus().getStyleClass().add(online ? "chat-header-status-online" : "chat-header-status");
         }
     }
 
+    private StackPane buildChannelMark() {
+        Label mark = new Label("#");
+        mark.getStyleClass().add("channel-mark-symbol");
+        StackPane host = new StackPane(mark);
+        host.getStyleClass().add("channel-mark");
+        host.setMinSize(40, 40);
+        host.setPrefSize(40, 40);
+        host.setMaxSize(40, 40);
+        return host;
+    }
+
     private void bindEvents() {
         view.getSendButton().setOnAction(e -> sendMessage());
-        view.getInputField().setOnAction(e -> sendMessage());
+        view.getSendButton().setDisable(true);
+        view.getInputField().textProperty().addListener((obs, old, text) ->
+                view.getSendButton().setDisable(text == null || text.trim().isEmpty()));
+        view.getInputField().setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER && !e.isShiftDown()) {
+                e.consume();
+                sendMessage();
+            }
+        });
     }
 
     private void sendMessage() {
@@ -95,7 +126,7 @@ public class ChatViewController {
                     }
                     appendMessage(message);
                     if (message.getId() > 0) lastMessageId = message.getId();
-                    view.getSendButton().setDisable(false);
+                    view.getSendButton().setDisable(view.getInputField().getText().trim().isEmpty());
                     view.getInputField().requestFocus();
                     // Always jump to bottom after sending.
                     view.scrollToBottom();
@@ -103,7 +134,10 @@ public class ChatViewController {
                 .exceptionally(ex -> {
                     Platform.runLater(() -> {
                         if (!active) return;
-                        view.getSendButton().setDisable(false);
+                        if (view.getInputField().getText().isBlank()) {
+                            view.getInputField().setText(content);
+                        }
+                        view.getSendButton().setDisable(view.getInputField().getText().trim().isEmpty());
                         System.err.println("Failed to send message: " + ex.getMessage());
                     });
                     return null;

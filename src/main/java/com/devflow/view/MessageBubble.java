@@ -20,40 +20,44 @@ import javafx.scene.text.TextFlow;
 
 public class MessageBubble extends HBox {
 
-    private static final double MAX_BUBBLE_WIDTH = 460;
+    private static final double MAX_MESSAGE_WIDTH = 720;
 
     public MessageBubble(Message message, boolean isOwn, User sender, boolean showSender) {
-        setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-        setPadding(new Insets(3, 14, 3, 14));
+        getStyleClass().add("message-row");
+        setAlignment(Pos.TOP_LEFT);
+        setPadding(new Insets(6, 22, 6, 22));
 
-        // TextFlow + Text wraps mid-word for unbreakable strings (long URLs, code), where Label would clip.
-        Text text = new Text(message.getContent() == null ? "" : message.getContent());
-        text.getStyleClass().add(isOwn ? "bubble-own-text" : "bubble-other-text");
+        String senderName = sender != null ? sender.getUsername() : (isOwn ? "Du" : "Unbekannt");
+        Avatar avatar = new Avatar(senderName, 34);
+        avatar.getStyleClass().add("message-avatar");
 
-        TextFlow flow = new TextFlow(text);
-        flow.setMaxWidth(MAX_BUBBLE_WIDTH);
-        flow.setPrefWidth(Region.USE_COMPUTED_SIZE);
-
-        VBox bubble = new VBox(flow);
-        bubble.setMaxWidth(MAX_BUBBLE_WIDTH);
-        bubble.getStyleClass().add(isOwn ? "bubble-own" : "bubble-other");
+        Label name = new Label(senderName);
+        name.getStyleClass().add("message-sender");
 
         Label time = new Label(DateFormatter.formatTime(message.getCreatedAt()));
         time.getStyleClass().add("bubble-time");
 
-        VBox column = new VBox(2);
-        column.setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-        column.setMaxWidth(MAX_BUBBLE_WIDTH);
+        HBox meta = new HBox(8, name, time);
+        meta.setAlignment(Pos.BASELINE_LEFT);
 
-        if (showSender && !isOwn && sender != null) {
-            Label senderLabel = new Label(sender.getUsername());
-            senderLabel.getStyleClass().add("message-sender");
-            column.getChildren().add(senderLabel);
-        }
+        Text text = new Text(message.getContent() == null ? "" : message.getContent());
+        text.getStyleClass().add("message-text");
 
-        column.getChildren().addAll(bubble, time);
+        TextFlow flow = new TextFlow(text);
+        flow.getStyleClass().add("message-text-flow");
+        flow.setMaxWidth(MAX_MESSAGE_WIDTH);
+        flow.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            double available = Math.max(160, newWidth.doubleValue() - 96);
+            flow.setMaxWidth(Math.min(MAX_MESSAGE_WIDTH, available));
+        });
 
-        // Context menu — copy / show full timestamp
+        VBox content = new VBox(3, meta, flow);
+        content.getStyleClass().add("message-content");
+        HBox.setHgrow(content, Priority.ALWAYS);
+
+        getChildren().addAll(avatar, content);
+
         ContextMenu menu = new ContextMenu();
         MenuItem copy = new MenuItem("Kopieren");
         copy.setOnAction(e -> {
@@ -66,22 +70,13 @@ public class MessageBubble extends HBox {
         info.setDisable(true);
         menu.getItems().addAll(copy, info);
 
-        bubble.setOnMouseClicked(e -> {
+        setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.SECONDARY) {
-                menu.show(bubble, e.getScreenX(), e.getScreenY());
+                menu.show(this, e.getScreenX(), e.getScreenY());
             }
         });
-
-        if (isOwn) {
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-            getChildren().addAll(spacer, column);
-        } else {
-            getChildren().add(column);
-        }
     }
 
-    // Backwards-compatible convenience constructor
     public MessageBubble(Message message, boolean isOwn) {
         this(message, isOwn, null, false);
     }

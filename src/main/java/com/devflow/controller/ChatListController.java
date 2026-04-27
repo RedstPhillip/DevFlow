@@ -19,7 +19,6 @@ public class ChatListController {
 
     private final ChatListView view;
     private final ChatService chatService;
-    private final MainController mainController;
     private Timeline refreshTimeline;
 
     /**
@@ -34,7 +33,6 @@ public class ChatListController {
     public ChatListController(ChatListView view, ChatService chatService, MainController mainController) {
         this.view = view;
         this.chatService = chatService;
-        this.mainController = mainController;
 
         view.setCurrentUserId(mainController.getCurrentUser().getId());
         view.setOnChatSelected(mainController::openChat);

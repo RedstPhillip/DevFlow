@@ -15,9 +15,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.ToggleSwitch;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class SettingsView extends ScrollPane {
 
     private final ToggleSwitch themeToggle;
@@ -27,7 +24,6 @@ public class SettingsView extends ScrollPane {
     private final Button logoutButton;
     private final Label patStatus;
 
-    private final Map<String, javafx.scene.Node> sectionAnchors = new HashMap<>();
     private final HBox wrapper;
 
     private Runnable onLogout;
@@ -41,16 +37,20 @@ public class SettingsView extends ScrollPane {
         // Phase 4 §3 + Polish-Pass §4: padding 24, between-section gap 32 ("Section-Break").
         // Each section wraps its (title, card) into a sub-VBox with a 12 gap so the
         // header sits tight to its card without the 32 break spilling inside.
-        VBox root = new VBox(32);
+        VBox root = new VBox(28);
         root.setPadding(new Insets(24, 24, 24, 24));
-        root.setMaxWidth(720);
+        root.setMaxWidth(940);
 
-        // The sidebar brand already says "Einstellungen" when this view is active —
-        // no need to repeat the title at the top of the scroll content.
+        Label headerTitle = new Label("Einstellungen");
+        headerTitle.getStyleClass().add("settings-page-title");
+        Label headerSubtitle = new Label("Client, Integrationen und Account für diesen Workspace.");
+        headerSubtitle.getStyleClass().add("settings-page-subtitle");
+        headerSubtitle.setWrapText(true);
+        VBox pageHeader = new VBox(6, headerTitle, headerSubtitle);
+        pageHeader.getStyleClass().add("settings-page-header");
 
         // ── Appearance ──
-        Label appearanceTitle = sectionTitle("ERSCHEINUNGSBILD");
-        sectionAnchors.put("appearance", appearanceTitle);
+        Label appearanceTitle = sectionTitle("Erscheinungsbild");
         VBox appearanceCard = new VBox(0);
         appearanceCard.getStyleClass().add("settings-card");
 
@@ -70,15 +70,14 @@ public class SettingsView extends ScrollPane {
         });
 
         // ── GitHub ──
-        Label githubTitle = sectionTitle("GITHUB INTEGRATION");
-        sectionAnchors.put("github", githubTitle);
+        Label githubTitle = sectionTitle("GitHub");
         VBox githubCard = new VBox(14);
         githubCard.getStyleClass().add("settings-card");
 
         Label patLabel = new Label("Personal Access Token");
         patLabel.getStyleClass().addAll("settings-label", "t-card-title");
 
-        Label patDesc = new Label("Wird benötigt um Updates aus dem privaten Repository zu beziehen. Der Token wird lokal gespeichert.");
+        Label patDesc = new Label("Token für private Repository-Updates. Wird lokal gespeichert.");
         patDesc.getStyleClass().addAll("settings-description", "t-body");
         patDesc.setWrapText(true);
 
@@ -123,15 +122,14 @@ public class SettingsView extends ScrollPane {
         githubCard.getChildren().addAll(patLabel, patDesc, patField, patButtons, patStatus);
 
         // ── Account ──
-        Label accountTitle = sectionTitle("ACCOUNT");
-        sectionAnchors.put("account", accountTitle);
+        Label accountTitle = sectionTitle("Account");
         VBox accountCard = new VBox(14);
         accountCard.getStyleClass().add("settings-card");
 
         Label logoutLabel = new Label("Abmelden");
         logoutLabel.getStyleClass().addAll("settings-label", "t-card-title");
 
-        Label logoutDesc = new Label("Meldet dich von diesem Gerät ab. Deine Unterhaltungen bleiben erhalten.");
+        Label logoutDesc = new Label("Meldet dich von diesem Gerät ab.");
         logoutDesc.getStyleClass().addAll("settings-description", "t-body");
         logoutDesc.setWrapText(true);
 
@@ -142,13 +140,12 @@ public class SettingsView extends ScrollPane {
         accountCard.getChildren().addAll(logoutLabel, logoutDesc, logoutButton);
 
         // ── About ──
-        Label aboutTitle = sectionTitle("ÜBER");
-        sectionAnchors.put("about", aboutTitle);
+        Label aboutTitle = sectionTitle("Über");
         VBox aboutCard = new VBox(6);
         aboutCard.getStyleClass().add("settings-card");
         Label version = new Label("DevFlow " + AppConfig.APP_VERSION);
         version.getStyleClass().addAll("settings-label", "t-card-title");
-        Label about = new Label("Enterprise-Chat für Teams.");
+        Label about = new Label("Collaboration für Entwicklerteams.");
         about.getStyleClass().addAll("settings-version", "t-body");
         aboutCard.getChildren().addAll(version, about);
 
@@ -158,28 +155,17 @@ public class SettingsView extends ScrollPane {
         VBox githubSection     = new VBox(12, githubTitle,     githubCard);
         VBox accountSection    = new VBox(12, accountTitle,    accountCard);
         VBox aboutSection      = new VBox(12, aboutTitle,      aboutCard);
-        root.getChildren().addAll(appearanceSection, githubSection, accountSection, aboutSection);
+        root.getChildren().addAll(pageHeader, appearanceSection, githubSection, accountSection, aboutSection);
 
         wrapper = new HBox(root);
+        wrapper.getStyleClass().add("settings-wrapper");
         wrapper.setAlignment(Pos.TOP_CENTER);
         HBox.setHgrow(root, Priority.ALWAYS);
         setContent(wrapper);
     }
 
-    public void scrollToSection(String key) {
-        javafx.scene.Node target = sectionAnchors.get(key);
-        if (target == null) return;
-        // Defer to next pulse so layout is up to date
-        javafx.application.Platform.runLater(() -> {
-            double contentHeight = wrapper.getBoundsInLocal().getHeight();
-            double viewportHeight = getViewportBounds().getHeight();
-            double maxScroll = contentHeight - viewportHeight;
-            if (maxScroll <= 0) { setVvalue(0); return; }
-            javafx.geometry.Bounds tgt = target.localToScene(target.getBoundsInLocal());
-            javafx.geometry.Bounds con = wrapper.localToScene(wrapper.getBoundsInLocal());
-            double yInContent = tgt.getMinY() - con.getMinY() - 16; // small offset
-            setVvalue(Math.min(1, Math.max(0, yInContent / maxScroll)));
-        });
+    public void scrollToTop() {
+        javafx.application.Platform.runLater(() -> setVvalue(0));
     }
 
     private void refreshPatStatus() {

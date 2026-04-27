@@ -2,6 +2,9 @@ package com.devflow.view;
 
 import com.devflow.config.AppConfig;
 import com.devflow.service.UpdateService;
+
+import java.io.IOException;
+
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,7 +31,7 @@ public class UpdateDialog extends Stage {
     private final Label statusLabel;
 
     public UpdateDialog(Stage owner, UpdateService.UpdateInfo info, UpdateService updateService) {
-        initModality(Modality.APPLICATION_MODAL);
+        initModality(Modality.NONE);
         initOwner(owner);
         initStyle(StageStyle.TRANSPARENT);
 
@@ -96,7 +99,7 @@ public class UpdateDialog extends Stage {
                             updateService.applyUpdate(jarPath);
                             Platform.exit();
                             System.exit(0);
-                        } catch (Exception ex) {
+                        } catch (IOException | RuntimeException ex) {
                             statusLabel.setText("Update fehlgeschlagen: " + ex.getMessage());
                             updateButton.setDisable(false);
                             skipButton.setDisable(false);
@@ -132,5 +135,15 @@ public class UpdateDialog extends Stage {
         });
         setScene(scene);
         setTitle("DevFlow Update");
+        setOnShown(e -> centerOverOwner(owner));
+    }
+
+    private void centerOverOwner(Stage owner) {
+        if (owner == null) {
+            centerOnScreen();
+            return;
+        }
+        setX(owner.getX() + (owner.getWidth() - getWidth()) / 2.0);
+        setY(owner.getY() + (owner.getHeight() - getHeight()) / 2.0);
     }
 }

@@ -52,7 +52,7 @@ public class AuthService {
             if (obj.has("error")) {
                 return obj.get("error").getAsString();
             }
-        } catch (Exception ignored) {}
+        } catch (RuntimeException ignored) {}
         return "Unbekannter Fehler";
     }
 }

@@ -2,6 +2,7 @@ package com.devflow.controller;
 
 import com.devflow.service.AuthService;
 import com.devflow.view.LoginView;
+
 import javafx.application.Platform;
 
 public class LoginController {
@@ -93,8 +94,11 @@ public class LoginController {
     }
 
     private String extractMessage(Throwable ex) {
-        Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
-        String msg = cause.getMessage();
+        Throwable root = ex;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String msg = root.getMessage();
         if (msg != null && !msg.isBlank()) return msg;
         return "Verbindung zum Server fehlgeschlagen";
     }

@@ -6,6 +6,7 @@ import com.devflow.config.TokenStore;
 import com.devflow.controller.MainController;
 import com.devflow.service.UpdateService;
 import com.devflow.view.UpdateDialog;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.text.Font;
@@ -41,7 +42,8 @@ public class MainApp extends Application {
                 .thenAcceptAsync(updateInfo -> {
                     if (updateInfo != null) {
                         UpdateDialog dialog = new UpdateDialog(stage, updateInfo, updateService);
-                        dialog.showAndWait();
+                        dialog.show();
+                        dialog.toFront();
                     }
                 }, Platform::runLater)
                 .exceptionally(ex -> {

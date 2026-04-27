@@ -13,6 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -135,10 +136,10 @@ public class ChatListView extends StackPane {
         emptyGlyph.getStyleClass().add("empty-state-glyph");
         StackPane glyphHost = new StackPane(emptyGlyph);
         glyphHost.getStyleClass().add("empty-state-glyph-host");
-        VBox emptyState = new VBox(10, glyphHost, emptyLabel);
-        emptyState.getStyleClass().addAll("empty-state", "empty-state-card");
+        VBox emptyState = new VBox(8, glyphHost, emptyLabel);
+        emptyState.getStyleClass().addAll("empty-state", "empty-state-card", "sidebar-empty-state");
         emptyState.setAlignment(Pos.CENTER);
-        emptyState.setPadding(new Insets(28, 24, 28, 24));
+        emptyState.setPadding(new Insets(12, 18, 8, 18));
         emptyState.visibleProperty().bind(
                 Bindings.size(dmFiltered).isEqualTo(0)
                         .and(Bindings.createBooleanBinding(this::isAllGroupSubSectionsEmpty,
@@ -310,7 +311,7 @@ public class ChatListView extends StackPane {
         // Add any missing sub-sections. Ordering is enforced below when we
         // repopulate groupSectionsHost's children list.
         for (Long key : desiredKeys) {
-            subSections.computeIfAbsent(key, this::createSubSection);
+            subSections.computeIfAbsent(key, k -> createSubSection());
         }
 
         // Repopulate host in desired order. For each sub-section we add its
@@ -330,7 +331,7 @@ public class ChatListView extends StackPane {
         return "Gruppe";
     }
 
-    private SubSection createSubSection(Long key) {
+    private SubSection createSubSection() {
         SubSection s = new SubSection();
         s.chats = FXCollections.observableArrayList();
         s.filtered = new FilteredList<>(s.chats, c -> matchesText(c) && matchesWorkspace(c));
@@ -506,11 +507,23 @@ public class ChatListView extends StackPane {
             nameLabel.getStyleClass().add("chat-cell-name");
             previewLabel.getStyleClass().add("chat-cell-preview");
             timeLabel.getStyleClass().add("chat-cell-time");
+            nameLabel.setMinWidth(0);
+            nameLabel.setMaxWidth(Double.MAX_VALUE);
+            nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+            previewLabel.setMinWidth(0);
+            previewLabel.setMaxWidth(Double.MAX_VALUE);
+            previewLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+            timeLabel.setMinWidth(Region.USE_PREF_SIZE);
+            timeLabel.setTextOverrun(OverrunStyle.CLIP);
             VBox textBox = new VBox(2, nameLabel, previewLabel);
             textBox.setAlignment(Pos.CENTER_LEFT);
+            textBox.setMinWidth(0);
+            textBox.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(textBox, Priority.ALWAYS);
             row = new HBox(10, avatar, textBox, timeLabel);
             row.setAlignment(Pos.CENTER_LEFT);
+            row.setMinWidth(0);
+            row.setMaxWidth(Double.MAX_VALUE);
             // Cells inside a sub-section get extra left padding so they read
             // as the third level of a VS Code-style tree.
             row.setPadding(new Insets(7, 12, 7, 32));

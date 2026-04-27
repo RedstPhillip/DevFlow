@@ -34,12 +34,12 @@ public class Avatar extends StackPane {
      * same gradient.
      */
     private static final String[][] PALETTE = {
-            {"#5e6ad2", "#8b8bd9"}, // accent-indigo
-            {"#4cb782", "#6dc99a"}, // success-green
-            {"#e5484d", "#f06a6e"}, // danger-red
-            {"#ffb224", "#ffc555"}, // warning-amber
-            {"#d36ad2", "#e08be0"}, // magenta
-            {"#6ad2c5", "#8de0d5"}  // cyan-mint
+            {"#1f6feb", "#4c8dff"},
+            {"#26364d", "#38506f"},
+            {"#1d4ed8", "#3b82f6"},
+            {"#293241", "#40516b"},
+            {"#0f3d68", "#2563eb"},
+            {"#334155", "#475569"}
     };
 
     private final Circle circle;

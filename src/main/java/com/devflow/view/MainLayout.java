@@ -1,11 +1,13 @@
 package com.devflow.view;
 
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -14,6 +16,7 @@ public class MainLayout extends StackPane {
     private final CustomTitleBar titleBar;
     private final Sidebar sidebar;
     private final StackPane contentArea;
+    private final StackPane modalLayer;
     private final VBox frame;
 
     /**
@@ -34,6 +37,10 @@ public class MainLayout extends StackPane {
 
         contentArea = new StackPane();
         contentArea.getStyleClass().add("content-area");
+        Rectangle contentClip = new Rectangle();
+        contentClip.widthProperty().bind(contentArea.widthProperty());
+        contentClip.heightProperty().bind(contentArea.heightProperty());
+        contentArea.setClip(contentClip);
 
         BorderPane body = new BorderPane();
         body.setLeft(sidebar);
@@ -43,7 +50,17 @@ public class MainLayout extends StackPane {
         frame.getStyleClass().add("window-frame");
         VBox.setVgrow(body, Priority.ALWAYS);
 
-        getChildren().add(frame);
+        modalLayer = new StackPane();
+        modalLayer.getStyleClass().add("modal-layer");
+        modalLayer.setPickOnBounds(false);
+        modalLayer.setMouseTransparent(true);
+        modalLayer.setMinSize(0, 0);
+        modalLayer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        modalLayer.prefWidthProperty().bind(widthProperty());
+        modalLayer.prefHeightProperty().bind(heightProperty());
+        StackPane.setAlignment(modalLayer, Pos.CENTER);
+
+        getChildren().addAll(frame, modalLayer);
 
         attachMaximizeListener(stage);
     }
@@ -86,7 +103,7 @@ public class MainLayout extends StackPane {
         contentArea.getChildren().setAll(node);
     }
 
-    public StackPane getModalHost() { return this; }
+    public StackPane getModalHost() { return modalLayer; }
     public Node getBlurTarget() { return frame; }
 
     public Sidebar getSidebar() { return sidebar; }

@@ -5,15 +5,16 @@ import com.devflow.model.User;
 import com.devflow.model.Workspace;
 import com.devflow.service.WorkspaceService;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -63,32 +64,28 @@ public class Sidebar extends VBox {
      */
     public enum RailKey { CHATS, SETTINGS }
 
-    private static final int SIDEBAR_WIDTH = 240;
+    private static final int SIDEBAR_WIDTH = 230;
 
-    // Primary nav (Chats / Einstellungen)
+    // Primary nav
     private final Button chatsNavItem;
-    private final Button settingsNavItem;
+    private final Button settingsFooterButton;
     private RailKey activeKey = RailKey.CHATS;
 
     // Section content
     private final StackPane sectionContentHost;
     private final VBox chatsSection;
-    private final VBox settingsSection;
     private final Label brand;          // section header label "CHATS"/"EINSTELLUNGEN"
     private final Button newChatButton; // plus-button in the chats section header
     private final TextField searchField;
     private final StackPane listHost;
     private Node chatListContent;
 
-    // Settings sub-nav (4 items: appearance / github / account / about)
-    private final VBox settingsNav;
-    private String activeSettingsSection;
-
     // User bar
     private final Avatar userAvatar;
     private final Label usernameLabel;
     private final Label statusLabel;
     private final HBox userBar;
+    private final HBox profileSummary;
 
     // Workspace switcher
     private final WorkspaceService workspaceService = new WorkspaceService();
@@ -107,7 +104,6 @@ public class Sidebar extends VBox {
     private Runnable onJoinWorkspace;
     private Runnable onWorkspaceSettings;
     private Consumer<String> onSearch;
-    private Consumer<String> onSettingsSection;
 
     // External listener tracked so we can detach it on disposal.
     private final Consumer<Workspace> workspaceStateListener;
@@ -149,17 +145,21 @@ public class Sidebar extends VBox {
         // ── 2) Subtle divider between switcher and primary nav. ──
         Region dividerTop = sidebarDivider();
 
-        // ── 3) Primary nav: Chats / Einstellungen. ──
+        // ── 3) Primary nav: active modules plus disabled future slots. ──
         chatsNavItem = buildNavItem(Feather.MESSAGE_SQUARE, "Chats", false);
         chatsNavItem.setOnAction(e -> activate(RailKey.CHATS));
-        settingsNavItem = buildNavItem(Feather.SETTINGS, "Einstellungen", false);
-        settingsNavItem.setOnAction(e -> activate(RailKey.SETTINGS));
-        VBox primaryNav = new VBox(2, chatsNavItem, settingsNavItem);
-        primaryNav.setPadding(new Insets(8, 8, 8, 8));
+        VBox primaryNav = new VBox(2,
+                chatsNavItem,
+                buildDisabledNavItem(Feather.CODE, "Code"),
+                buildDisabledNavItem(Feather.GITHUB, "GitHub"),
+                buildDisabledNavItem(Feather.FILE_TEXT, "Dateien")
+        );
+        primaryNav.getStyleClass().add("sidebar-module-nav");
+        primaryNav.setPadding(new Insets(10, 10, 10, 10));
 
         // ── 4) Section content. ──
-        // Section header label — same node moves between chatsSection /
-        // settingsSection so we can rebrand it cheaply on activate().
+        // The sidebar stays global. Settings sub-navigation belongs to the
+        // settings view itself, not to a second nested rail.
         brand = new Label("CHATS");
         brand.getStyleClass().addAll("sidebar-section-header-label", "t-section-header");
 
@@ -198,27 +198,6 @@ public class Sidebar extends VBox {
         chatsSection = new VBox(sectionHeader, searchWrap, listHost);
         chatsSection.getStyleClass().add("sidebar-section");
 
-        // Settings sub-nav with leading "EINSTELLUNGEN" header.
-        Label settingsBrand = new Label("EINSTELLUNGEN");
-        settingsBrand.getStyleClass().addAll("sidebar-section-header-label", "t-section-header");
-        HBox settingsHeader = new HBox(settingsBrand);
-        settingsHeader.getStyleClass().add("sidebar-section-header");
-        settingsHeader.setAlignment(Pos.CENTER_LEFT);
-        // Polish-Pass §4: same 14/14/6 as the chats section header.
-        settingsHeader.setPadding(new Insets(14, 14, 6, 14));
-
-        settingsNav = new VBox(2);
-        settingsNav.setPadding(new Insets(0, 8, 8, 8));
-        settingsNav.getChildren().addAll(
-                buildSettingsNavItem("appearance", Feather.DROPLET, "Erscheinungsbild"),
-                buildSettingsNavItem("github",     Feather.GITHUB,  "GitHub Integration"),
-                buildSettingsNavItem("account",    Feather.USER,    "Account"),
-                buildSettingsNavItem("about",      Feather.INFO,    "Über")
-        );
-
-        settingsSection = new VBox(settingsHeader, settingsNav);
-        settingsSection.getStyleClass().add("sidebar-section");
-
         sectionContentHost = new StackPane(chatsSection);
         VBox.setVgrow(sectionContentHost, Priority.ALWAYS);
 
@@ -237,14 +216,29 @@ public class Sidebar extends VBox {
         userInfo.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 
-        userBar = new HBox(10, userAvatar, userInfo);
+        profileSummary = new HBox(10, userAvatar, userInfo);
+        profileSummary.getStyleClass().add("sidebar-profile-summary");
+        profileSummary.setAlignment(Pos.CENTER_LEFT);
+        profileSummary.setMinWidth(0);
+        HBox.setHgrow(profileSummary, Priority.ALWAYS);
+        profileSummary.setOnMouseClicked(e -> { if (onProfileClick != null) onProfileClick.run(); });
+
+        FontIcon settingsIcon = new FontIcon(Feather.SETTINGS);
+        settingsIcon.getStyleClass().add("sidebar-footer-settings-icon");
+        settingsFooterButton = new Button();
+        settingsFooterButton.setGraphic(settingsIcon);
+        settingsFooterButton.getStyleClass().addAll("button-flat", "sidebar-footer-settings-btn");
+        settingsFooterButton.setTooltip(new Tooltip("Einstellungen"));
+        settingsFooterButton.setFocusTraversable(false);
+        settingsFooterButton.setOnAction(e -> activate(RailKey.SETTINGS));
+
+        userBar = new HBox(8, profileSummary, settingsFooterButton);
         userBar.getStyleClass().add("sidebar-user-bar");
         userBar.setAlignment(Pos.CENTER_LEFT);
-        userBar.setPadding(new Insets(12, 14, 12, 14));
+        userBar.setPadding(new Insets(8, 10, 8, 10));
         userBar.setMinHeight(56);
         userBar.setPrefHeight(56);
         userBar.setMaxHeight(56);
-        userBar.setOnMouseClicked(e -> { if (onProfileClick != null) onProfileClick.run(); });
 
         // Bottom divider above user-bar (mirrors the top divider visual rhythm).
         Region dividerBottom = sidebarDivider();
@@ -268,7 +262,7 @@ public class Sidebar extends VBox {
         WorkspaceState.getInstance().addListener(workspaceStateListener);
         applyCurrentWorkspaceToHeader(WorkspaceState.getInstance().getCurrent());
 
-        refreshWorkspaces();
+        refreshWorkspacesInternal();
     }
 
     // ── Builders ─────────────────────────────────────────────────────────
@@ -304,14 +298,11 @@ public class Sidebar extends VBox {
         return b;
     }
 
-    private Button buildSettingsNavItem(String key, Ikon glyph, String label) {
-        Button b = buildNavItem(glyph, label, true);
-        b.getProperties().put("settings-key", key);
-        b.setOnAction(e -> {
-            activeSettingsSection = key;
-            updateSettingsNavStyles();
-            if (onSettingsSection != null) onSettingsSection.accept(key);
-        });
+    private Button buildDisabledNavItem(Ikon glyph, String label) {
+        Button b = buildNavItem(glyph, label, false);
+        b.getStyleClass().add("sidebar-nav-item-disabled");
+        b.setDisable(true);
+        b.setTooltip(new Tooltip(label + " wird als Modul vorbereitet"));
         return b;
     }
 
@@ -332,49 +323,25 @@ public class Sidebar extends VBox {
 
     private void updateActiveStyles() {
         chatsNavItem.getStyleClass().remove("sidebar-nav-item-active");
-        settingsNavItem.getStyleClass().remove("sidebar-nav-item-active");
+        settingsFooterButton.getStyleClass().remove("sidebar-footer-settings-btn-active");
         if (activeKey == RailKey.CHATS) chatsNavItem.getStyleClass().add("sidebar-nav-item-active");
-        if (activeKey == RailKey.SETTINGS) settingsNavItem.getStyleClass().add("sidebar-nav-item-active");
+        if (activeKey == RailKey.SETTINGS) settingsFooterButton.getStyleClass().add("sidebar-footer-settings-btn-active");
     }
 
     private void applyActiveSection() {
-        if (activeKey == RailKey.SETTINGS) {
-            if (activeSettingsSection == null) activeSettingsSection = "appearance";
-            updateSettingsNavStyles();
-            sectionContentHost.getChildren().setAll(settingsSection);
+        if (chatListContent != null) {
+            listHost.getChildren().setAll(chatListContent);
         } else {
-            if (chatListContent != null) {
-                listHost.getChildren().setAll(chatListContent);
-            } else {
-                listHost.getChildren().clear();
-            }
-            sectionContentHost.getChildren().setAll(chatsSection);
+            listHost.getChildren().clear();
         }
-    }
-
-    private void updateSettingsNavStyles() {
-        for (Node n : settingsNav.getChildren()) {
-            if (!(n instanceof Button b)) continue;
-            b.getStyleClass().remove("sidebar-nav-item-active");
-            Object k = b.getProperties().get("settings-key");
-            if (k != null && k.equals(activeSettingsSection)) {
-                b.getStyleClass().add("sidebar-nav-item-active");
-            }
-        }
+        sectionContentHost.getChildren().setAll(chatsSection);
     }
 
     // ── External wiring (controller-side) ────────────────────────────────
 
     public void setListNode(Node node) {
         this.chatListContent = node;
-        if (activeKey != RailKey.SETTINGS) {
-            listHost.getChildren().setAll(node);
-        }
-    }
-
-    public void setActiveSettingsSection(String key) {
-        this.activeSettingsSection = key;
-        updateSettingsNavStyles();
+        listHost.getChildren().setAll(node);
     }
 
     public TextField getSearchField() { return searchField; }
@@ -394,7 +361,6 @@ public class Sidebar extends VBox {
     public void setOnNewChat(Runnable r)               { this.onNewChat = r; }
     public void setOnProfileClick(Runnable r)          { this.onProfileClick = r; }
     public void setOnSearch(Consumer<String> c)        { this.onSearch = c; }
-    public void setOnSettingsSection(Consumer<String> c) { this.onSettingsSection = c; }
 
     public void setWorkspaceActions(Runnable onNewWorkspace, Runnable onJoinWorkspace) {
         this.onNewWorkspace = onNewWorkspace;
@@ -408,6 +374,10 @@ public class Sidebar extends VBox {
     // ── Workspace switcher ───────────────────────────────────────────────
 
     public void refreshWorkspaces() {
+        refreshWorkspacesInternal();
+    }
+
+    private void refreshWorkspacesInternal() {
         workspaceService.listWorkspaces()
                 .whenComplete((list, err) -> Platform.runLater(() -> {
                     if (err != null) {
@@ -420,8 +390,9 @@ public class Sidebar extends VBox {
                     showWorkspaceError(false);
                     workspacesCache = list != null ? list : new ArrayList<>();
                     Workspace current = WorkspaceState.getInstance().getCurrent();
-                    boolean stillValid = current != null && workspacesCache.stream()
-                            .anyMatch(w -> w.getId() == current.getId());
+                        Long currentId = current != null ? current.getId() : null;
+                        boolean stillValid = currentId != null && workspacesCache.stream()
+                            .anyMatch(w -> w.getId() == currentId);
                     if (!stillValid) {
                         Workspace personal = workspacesCache.stream()
                                 .filter(Workspace::isPersonal)
@@ -430,7 +401,7 @@ public class Sidebar extends VBox {
                         WorkspaceState.getInstance().setCurrent(personal);
                     } else {
                         Workspace refreshed = workspacesCache.stream()
-                                .filter(w -> w.getId() == current.getId())
+                            .filter(w -> currentId != null && w.getId() == currentId)
                                 .findFirst()
                                 .orElse(current);
                         WorkspaceState.getInstance().setCurrent(refreshed);
@@ -447,6 +418,9 @@ public class Sidebar extends VBox {
      */
     private void showWorkspaceMenu() {
         ContextMenu menu = new ContextMenu();
+        menu.getStyleClass().add("workspace-menu");
+        menu.setAutoFix(true);
+        menu.setAutoHide(true);
 
         Workspace current = WorkspaceState.getInstance().getCurrent();
         long currentId = current != null ? current.getId() : -1L;
@@ -477,7 +451,9 @@ public class Sidebar extends VBox {
 
         menu.getItems().addAll(settingsItem, newItem, joinItem);
 
-        menu.show(workspaceSwitcher, Side.BOTTOM, 0, 0);
+        Bounds bounds = workspaceSwitcher.localToScreen(workspaceSwitcher.getBoundsInLocal());
+        if (bounds == null) return;
+        menu.show(workspaceSwitcher, bounds.getMinX() + 8, bounds.getMaxY() + 4);
     }
 
     private MenuItem buildIconMenuItem(Ikon glyph, String label) {
@@ -485,9 +461,11 @@ public class Sidebar extends VBox {
         ic.getStyleClass().add("workspace-menu-action-icon");
         Label name = new Label(label);
         name.getStyleClass().addAll("workspace-menu-name", "t-body");
+        name.setMaxWidth(144);
+        name.setTextOverrun(OverrunStyle.ELLIPSIS);
         HBox row = new HBox(8, ic, name);
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setMinWidth(220);
+        row.setMinWidth(190);
         CustomMenuItem item = new CustomMenuItem(row, true);
         item.setHideOnClick(true);
         return item;
@@ -507,6 +485,8 @@ public class Sidebar extends VBox {
         }
         Label name = new Label(ws.getName());
         name.getStyleClass().addAll("workspace-menu-name", "t-body");
+        name.setMaxWidth(134);
+        name.setTextOverrun(OverrunStyle.ELLIPSIS);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         StackPane checkHost = new StackPane();
@@ -519,7 +499,7 @@ public class Sidebar extends VBox {
         }
         HBox row = new HBox(8, pinHost, name, spacer, checkHost);
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setMinWidth(220);
+        row.setMinWidth(190);
 
         CustomMenuItem item = new CustomMenuItem(row, true);
         item.setHideOnClick(true);

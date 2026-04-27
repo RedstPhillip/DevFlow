@@ -1,5 +1,8 @@
 package com.devflow.controller;
 
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+
 import com.devflow.config.ThemeManager;
 import com.devflow.config.TokenStore;
 import com.devflow.config.WorkspaceState;
@@ -13,7 +16,6 @@ import com.devflow.service.WorkspaceService;
 import com.devflow.view.ChatListView;
 import com.devflow.view.ChatView;
 import com.devflow.view.CustomTitleBar;
-import com.devflow.view.EmptyState;
 import com.devflow.view.GroupChatSettingsDialog;
 import com.devflow.view.JoinWorkspaceDialog;
 import com.devflow.view.LoginView;
@@ -24,9 +26,15 @@ import com.devflow.view.ProfileDialog;
 import com.devflow.view.SettingsView;
 import com.devflow.view.Sidebar;
 import com.devflow.view.WorkspaceSettingsDialog;
+
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -40,6 +48,7 @@ public class MainController {
 
     private ChatListController chatListController;
     private ChatViewController chatViewController;
+    @SuppressWarnings("unused")
     private LoginController loginController;
 
     private ChatListView chatListView;
@@ -178,9 +187,6 @@ public class MainController {
         sidebar.setOnSearch(query -> {
             if (chatListView != null) chatListView.setFilter(query);
         });
-        sidebar.setOnSettingsSection(sectionKey -> {
-            if (settingsView != null) settingsView.scrollToSection(sectionKey);
-        });
         sidebar.setWorkspaceActions(this::openNewWorkspaceDialog, this::openJoinWorkspaceDialog);
         sidebar.setOnWorkspaceSettings(this::openWorkspaceSettingsDialog);
 
@@ -188,6 +194,7 @@ public class MainController {
         chatListController.startRefresh();
 
         showWelcomeContent();
+        updateTitleSubtitle("Workspace");
 
         setScene(mainLayout, "/styles/chat.css");
     }
@@ -203,9 +210,9 @@ public class MainController {
             settingsView.setOnLogout(this::logout);
         }
         mainLayout.getSidebar().setActive(Sidebar.RailKey.SETTINGS);
-        mainLayout.getSidebar().setActiveSettingsSection("appearance");
+        updateTitleSubtitle("Einstellungen");
         mainLayout.setMainContent(settingsView);
-        settingsView.scrollToSection("appearance");
+        settingsView.scrollToTop();
     }
 
     public void openChat(Chat chat) {
@@ -221,6 +228,7 @@ public class MainController {
         if (chat.isGroupChat()) {
             chatViewController.setOnOpenGroupChatSettings(() -> openGroupChatSettings(chat));
         }
+        updateTitleSubtitle(chat.getDisplayName(currentUser.getId()));
         mainLayout.setMainContent(chatView);
         chatViewController.startPolling();
     }
@@ -339,20 +347,78 @@ public class MainController {
         }
         if (chatListView != null) chatListView.clearSelection();
 
-        // Phase 3 P2: switched the welcome panel to the shared EmptyState
-        // widget. Adds an actionable "Neue Unterhaltung" button so the user
-        // has a clear next step instead of having to discover the "+" in the
-        // sidebar header. The widget's CSS class controls font-size & color
-        // — no per-screen overrides here.
-        EmptyState welcome = new EmptyState(
-                org.kordamp.ikonli.feather.Feather.MESSAGE_SQUARE,
-                "Willkommen bei DevFlow",
-                "Wähle einen Chat aus der Seitenleiste oder starte eine neue Unterhaltung."
-        ).withAction("Neue Unterhaltung", this::openNewChatDialog);
+        com.devflow.model.Workspace ws = WorkspaceState.getInstance().getCurrent();
+        String workspace = ws != null && ws.getName() != null && !ws.getName().isBlank()
+                ? ws.getName()
+                : "Persönlich";
+        FontIcon headerMark = new FontIcon(Feather.MESSAGE_SQUARE);
+        headerMark.getStyleClass().add("workspace-home-header-mark");
+        StackPane headerMarkHost = new StackPane(headerMark);
+        headerMarkHost.getStyleClass().add("workspace-home-header-mark-host");
 
-        StackPane wrapper = new StackPane(welcome);
-        wrapper.getStyleClass().add("content-area");
+        Label headerTitle = new Label(workspace);
+        headerTitle.getStyleClass().add("workspace-home-header-title");
+        headerTitle.setWrapText(true);
+        Label headerMeta = new Label("Workspace");
+        headerMeta.getStyleClass().add("workspace-home-header-meta");
+        VBox headerCopy = new VBox(2, headerTitle, headerMeta);
+        headerCopy.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(headerCopy, Priority.ALWAYS);
+
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+
+        HBox header = new HBox(12, headerMarkHost, headerCopy, headerSpacer);
+        header.getStyleClass().add("workspace-home-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        FontIcon emptyIcon = new FontIcon(Feather.MESSAGE_SQUARE);
+        emptyIcon.getStyleClass().add("workspace-home-empty-icon");
+
+        Label kicker = new Label("WORKSPACE");
+        kicker.getStyleClass().add("workspace-home-kicker");
+        Label title = new Label(workspace);
+        title.getStyleClass().add("workspace-home-title");
+        title.setWrapText(true);
+        Label subtitle = new Label("Wähle links eine Unterhaltung oder starte einen neuen Chat.");
+        subtitle.getStyleClass().add("workspace-home-subtitle");
+        subtitle.setWrapText(true);
+
+        Button primary = new Button("Neue Unterhaltung");
+        primary.getStyleClass().addAll("button-primary", "button-large", "workspace-home-primary");
+        primary.setGraphic(new FontIcon(Feather.EDIT_3));
+        primary.setOnAction(e -> openNewChatDialog());
+
+        Button secondary = new Button("Workspace beitreten");
+        secondary.getStyleClass().addAll("button-secondary", "button-large");
+        secondary.setGraphic(new FontIcon(Feather.LOG_IN));
+        secondary.setOnAction(e -> openJoinWorkspaceDialog());
+
+        HBox actions = new HBox(10, primary, secondary);
+        actions.getStyleClass().add("workspace-home-actions");
+        actions.setAlignment(Pos.CENTER);
+
+        VBox emptyState = new VBox(10, emptyIcon, kicker, title, subtitle, actions);
+        emptyState.getStyleClass().add("workspace-home-empty");
+        emptyState.setAlignment(Pos.CENTER);
+
+        StackPane canvas = new StackPane(emptyState);
+        canvas.getStyleClass().add("workspace-home-canvas");
+        VBox.setVgrow(canvas, Priority.ALWAYS);
+
+        VBox wrapper = new VBox(header, canvas);
+        wrapper.getStyleClass().addAll("content-area", "workspace-home");
+        updateTitleSubtitle("Workspace");
         mainLayout.setMainContent(wrapper);
+    }
+
+    private void updateTitleSubtitle(String context) {
+        if (mainLayout == null || mainLayout.getTitleBar() == null) return;
+        com.devflow.model.Workspace ws = WorkspaceState.getInstance().getCurrent();
+        String workspace = ws != null && ws.getName() != null && !ws.getName().isBlank()
+                ? ws.getName()
+                : "Persönlich";
+        mainLayout.getTitleBar().setSubtitle(workspace + " / " + context);
     }
 
     public void logout() {
@@ -395,6 +461,7 @@ public class MainController {
         if (extraStylesheet != null) {
             scene.getStylesheets().add(getClass().getResource(extraStylesheet).toExternalForm());
         }
+        scene.getStylesheets().add(getClass().getResource("/styles/enterprise.css").toExternalForm());
         ThemeManager.getInstance().registerScene(scene);
         stage.setScene(scene);
         stage.show();

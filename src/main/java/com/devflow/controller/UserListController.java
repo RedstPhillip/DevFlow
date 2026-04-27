@@ -8,18 +8,20 @@ public class UserListController {
 
     private final UserListView view;
     private final UserService userService;
-    private final MainController mainController;
 
     public UserListController(UserListView view, UserService userService, MainController mainController) {
         this.view = view;
         this.userService = userService;
-        this.mainController = mainController;
 
         view.setOnStartDm(mainController::startDmWith);
-        load();
+        loadUsers();
     }
 
     public void load() {
+        loadUsers();
+    }
+
+    private void loadUsers() {
         userService.listUsers()
                 .thenAcceptAsync(users -> view.setUsers(users), Platform::runLater)
                 .exceptionally(ex -> {

@@ -1,10 +1,5 @@
 package com.devflow.service;
 
-import com.devflow.config.ConnectionState;
-import com.devflow.config.TokenStore;
-import com.devflow.util.JsonUtil;
-import com.google.gson.JsonObject;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,9 +7,15 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
+import com.devflow.config.ConnectionState;
+import com.devflow.config.TokenStore;
+import com.devflow.util.JsonUtil;
+import com.google.gson.JsonObject;
+
 public class HttpService {
 
     private static final HttpService INSTANCE = new HttpService();
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private final HttpClient client;
 
     /**
@@ -46,6 +47,7 @@ public class HttpService {
     public CompletableFuture<HttpResponse<String>> get(String url) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .GET();
         addAuthHeader(builder);
@@ -56,6 +58,7 @@ public class HttpService {
         String json = body instanceof String ? (String) body : JsonUtil.toJson(body);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json));
         addAuthHeader(builder);
@@ -66,6 +69,7 @@ public class HttpService {
         String json = body instanceof String ? (String) body : JsonUtil.toJson(body);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(json));
         addAuthHeader(builder);
@@ -75,6 +79,7 @@ public class HttpService {
     public CompletableFuture<HttpResponse<String>> delete(String url) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .DELETE();
         addAuthHeader(builder);
@@ -85,6 +90,7 @@ public class HttpService {
         String json = body instanceof String ? (String) body : JsonUtil.toJson(body);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
@@ -172,6 +178,7 @@ public class HttpService {
 
         HttpRequest refreshRequest = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl + "/auth/refresh"))
+            .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
