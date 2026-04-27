@@ -1,6 +1,8 @@
 package com.devflow.view;
 
-import atlantafx.base.theme.Styles;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+
 import com.devflow.config.GroupState;
 import com.devflow.config.WorkspaceState;
 import com.devflow.model.Group;
@@ -8,6 +10,8 @@ import com.devflow.model.Workspace;
 import com.devflow.model.WorkspaceMember;
 import com.devflow.service.GroupService;
 import com.devflow.service.WorkspaceService;
+
+import atlantafx.base.theme.Styles;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,9 +31,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
-import java.util.ArrayList;
-import java.util.function.Consumer;
 
 /**
  * Minimal workspace-settings dialog opened from the gear icon on the sidebar

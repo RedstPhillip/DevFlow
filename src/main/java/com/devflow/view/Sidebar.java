@@ -1,9 +1,18 @@
 package com.devflow.view;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+
 import com.devflow.config.WorkspaceState;
 import com.devflow.model.User;
 import com.devflow.model.Workspace;
 import com.devflow.service.WorkspaceService;
+
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -24,13 +33,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
-import org.kordamp.ikonli.Ikon;
-import org.kordamp.ikonli.feather.Feather;
-import org.kordamp.ikonli.javafx.FontIcon;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Phase 4 — Linear-style sidebar.

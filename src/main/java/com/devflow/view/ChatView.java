@@ -1,5 +1,8 @@
 package com.devflow.view;
 
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -13,8 +16,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import org.kordamp.ikonli.feather.Feather;
-import org.kordamp.ikonli.javafx.FontIcon;
 
 public class ChatView extends VBox {
 

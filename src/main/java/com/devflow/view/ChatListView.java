@@ -1,8 +1,19 @@
 package com.devflow.view;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import org.kordamp.ikonli.feather.Feather;
+import org.kordamp.ikonli.javafx.FontIcon;
+
 import com.devflow.model.Chat;
 import com.devflow.model.Group;
 import com.devflow.util.DateFormatter;
+
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,15 +31,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import org.kordamp.ikonli.feather.Feather;
-import org.kordamp.ikonli.javafx.FontIcon;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * Sectioned chat list shown inside the sidebar.

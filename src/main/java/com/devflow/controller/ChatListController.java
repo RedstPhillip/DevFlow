@@ -1,5 +1,8 @@
 package com.devflow.controller;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import com.devflow.config.AppConfig;
 import com.devflow.config.GroupState;
 import com.devflow.config.WorkspaceState;
@@ -7,13 +10,11 @@ import com.devflow.model.Group;
 import com.devflow.model.Workspace;
 import com.devflow.service.ChatService;
 import com.devflow.view.ChatListView;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.util.Duration;
-
-import java.util.List;
-import java.util.function.Consumer;
 
 public class ChatListController {
 

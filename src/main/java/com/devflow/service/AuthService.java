@@ -1,12 +1,12 @@
 package com.devflow.service;
 
+import java.util.concurrent.CompletableFuture;
+
 import com.devflow.config.AppConfig;
 import com.devflow.config.TokenStore;
 import com.devflow.model.AuthToken;
 import com.devflow.util.JsonUtil;
 import com.google.gson.JsonObject;
-
-import java.util.concurrent.CompletableFuture;
 
 public class AuthService {
 

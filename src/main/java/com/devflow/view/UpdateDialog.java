@@ -1,9 +1,9 @@
 package com.devflow.view;
 
+import java.io.IOException;
+
 import com.devflow.config.AppConfig;
 import com.devflow.service.UpdateService;
-
-import java.io.IOException;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
