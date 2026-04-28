@@ -74,7 +74,7 @@ public class UpdateDialog extends Stage {
         updateButton.getStyleClass().addAll("button-primary", "button-large");
         if (info.downloadUrl == null) {
             updateButton.setDisable(true);
-            statusLabel.setText("Kein JAR-Asset im Release gefunden");
+            statusLabel.setText("Neuer Commit erkannt. Kein automatischer Download konfiguriert.");
             statusLabel.setVisible(true);
         }
 

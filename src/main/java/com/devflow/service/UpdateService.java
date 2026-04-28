@@ -4,7 +4,6 @@ import com.devflow.config.AppConfig;
 import com.devflow.config.TokenStore;
 import com.devflow.util.JsonUtil;
 import com.devflow.util.PlatformUtil;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
@@ -25,11 +24,12 @@ public class UpdateService {
 
     public CompletableFuture<UpdateInfo> checkForUpdate() {
         String url = "https://api.github.com/repos/" + AppConfig.GITHUB_OWNER + "/"
-                + AppConfig.GITHUB_REPO + "/releases/latest";
+                + AppConfig.GITHUB_REPO + "/commits/" + AppConfig.GITHUB_BRANCH;
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "DevFlow-Updater/" + AppConfig.APP_VERSION)
                 .GET();
         addGithubAuthIfPresent(builder);
 
@@ -39,29 +39,8 @@ public class UpdateService {
                         System.err.println("GitHub API returned " + response.statusCode());
                         return null;
                     }
-                    JsonObject release = JsonUtil.gson().fromJson(response.body(), JsonObject.class);
-                    String tagName = release.get("tag_name").getAsString();
-                    String remoteVersion = tagName.startsWith("v") ? tagName.substring(1) : tagName;
-
-                    if (isNewer(remoteVersion, AppConfig.APP_VERSION)) {
-                        String releaseNotes = release.has("body") && !release.get("body").isJsonNull()
-                                ? release.get("body").getAsString() : "";
-                        String downloadUrl = null;
-
-                        JsonArray assets = release.getAsJsonArray("assets");
-                        if (assets != null) {
-                            for (var asset : assets) {
-                                String name = asset.getAsJsonObject().get("name").getAsString();
-                                if (name.endsWith(".jar")) {
-                                    downloadUrl = asset.getAsJsonObject()
-                                            .get("browser_download_url").getAsString();
-                                    break;
-                                }
-                            }
-                        }
-                        return new UpdateInfo(remoteVersion, releaseNotes, downloadUrl);
-                    }
-                    return null;
+                    JsonObject commit = JsonUtil.gson().fromJson(response.body(), JsonObject.class);
+                    return updateFromLatestCommit(commit);
                 });
     }
 
@@ -96,6 +75,38 @@ public class UpdateService {
         }
     }
 
+    private UpdateInfo updateFromLatestCommit(JsonObject latest) {
+        if (latest == null || !latest.has("sha") || latest.get("sha").isJsonNull()) return null;
+        String latestSha = latest.get("sha").getAsString();
+        String currentSha = AppConfig.APP_COMMIT == null ? "" : AppConfig.APP_COMMIT.trim();
+        if (!currentSha.isBlank() && latestSha.equalsIgnoreCase(currentSha)) return null;
+        if (!currentSha.isBlank() && latestSha.startsWith(currentSha)) return null;
+        if (!currentSha.isBlank() && currentSha.length() >= 7 && currentSha.length() <= latestSha.length()
+                && currentSha.equalsIgnoreCase(latestSha.substring(0, currentSha.length()))) {
+            return null;
+        }
+
+        String shortSha = latestSha.length() > 12 ? latestSha.substring(0, 12) : latestSha;
+        return new UpdateInfo("Commit " + shortSha, commitNotes(latest), null);
+    }
+
+    private String commitNotes(JsonObject latest) {
+        JsonObject commit = latest.has("commit") && latest.get("commit").isJsonObject()
+                ? latest.getAsJsonObject("commit") : null;
+        String message = "";
+        if (commit != null && commit.has("message") && !commit.get("message").isJsonNull()) {
+            message = commit.get("message").getAsString();
+        }
+        String htmlUrl = latest.has("html_url") && !latest.get("html_url").isJsonNull()
+                ? latest.get("html_url").getAsString() : "";
+        StringBuilder notes = new StringBuilder("Neuer Commit auf ")
+                .append(AppConfig.GITHUB_BRANCH)
+                .append(" gefunden.");
+        if (!message.isBlank()) notes.append("\n\n").append(message);
+        if (!htmlUrl.isBlank()) notes.append("\n\n").append(htmlUrl);
+        return notes.toString();
+    }
+
     public void applyUpdate(Path updateJar) throws IOException {
         Path currentJar = Path.of(System.getProperty("java.class.path").split(
                 System.getProperty("path.separator"))[0]);
@@ -124,25 +135,6 @@ public class UpdateService {
             script.toFile().setExecutable(true);
             new ProcessBuilder("bash", script.toString()).inheritIO().start();
         }
-    }
-
-    private boolean isNewer(String remote, String current) {
-        String[] r = remote.split("\\.");
-        String[] c = current.split("\\.");
-        for (int i = 0; i < Math.max(r.length, c.length); i++) {
-            int rv = i < r.length ? parseVersionPart(r[i]) : 0;
-            int cv = i < c.length ? parseVersionPart(c[i]) : 0;
-            if (rv > cv) return true;
-            if (rv < cv) return false;
-        }
-        return false;
-    }
-
-    private int parseVersionPart(String part) {
-        if (part == null) return 0;
-        String digits = part.replaceFirst("[^0-9].*$", "");
-        if (digits.isBlank()) return 0;
-        return Integer.parseInt(digits);
     }
 
     public static class UpdateInfo {
