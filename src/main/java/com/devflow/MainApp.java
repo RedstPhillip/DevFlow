@@ -2,7 +2,6 @@ package com.devflow;
 
 import com.devflow.config.AppConfig;
 import com.devflow.config.ThemeManager;
-import com.devflow.config.TokenStore;
 import com.devflow.controller.MainController;
 import com.devflow.service.UpdateService;
 import com.devflow.view.UpdateDialog;
@@ -32,11 +31,6 @@ public class MainApp extends Application {
     }
 
     private void checkForUpdates(Stage stage) {
-        String pat = TokenStore.getInstance().getGithubPat();
-        if (pat == null || pat.isBlank()) {
-            return;
-        }
-
         UpdateService updateService = new UpdateService();
         updateService.checkForUpdate()
                 .thenAcceptAsync(updateInfo -> {

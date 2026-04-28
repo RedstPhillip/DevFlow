@@ -19,25 +19,21 @@ import java.util.concurrent.CompletableFuture;
 
 public class UpdateService {
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
 
     public CompletableFuture<UpdateInfo> checkForUpdate() {
-        String pat = TokenStore.getInstance().getGithubPat();
-        if (pat == null || pat.isBlank()) {
-            return CompletableFuture.completedFuture(null);
-        }
-
         String url = "https://api.github.com/repos/" + AppConfig.GITHUB_OWNER + "/"
                 + AppConfig.GITHUB_REPO + "/releases/latest";
 
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "token " + pat)
                 .header("Accept", "application/vnd.github+json")
-                .GET()
-                .build();
+                .GET();
+        addGithubAuthIfPresent(builder);
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         System.err.println("GitHub API returned " + response.statusCode());
@@ -70,17 +66,17 @@ public class UpdateService {
     }
 
     public CompletableFuture<Path> downloadUpdate(String downloadUrl) {
-        String pat = TokenStore.getInstance().getGithubPat();
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(downloadUrl))
                 .header("Accept", "application/octet-stream")
                 .GET();
-        if (pat != null) {
-            builder.header("Authorization", "token " + pat);
-        }
+        addGithubAuthIfPresent(builder);
 
         return client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofInputStream())
                 .thenApply(response -> {
+                    if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                        throw new RuntimeException("Download failed: HTTP " + response.statusCode());
+                    }
                     try {
                         Path updateDir = PlatformUtil.getAppDataDir().resolve("updates");
                         Files.createDirectories(updateDir);
@@ -91,6 +87,13 @@ public class UpdateService {
                         throw new RuntimeException("Download failed", e);
                     }
                 });
+    }
+
+    private void addGithubAuthIfPresent(HttpRequest.Builder builder) {
+        String pat = TokenStore.getInstance().getGithubPat();
+        if (pat != null && !pat.isBlank()) {
+            builder.header("Authorization", "token " + pat.trim());
+        }
     }
 
     public void applyUpdate(Path updateJar) throws IOException {

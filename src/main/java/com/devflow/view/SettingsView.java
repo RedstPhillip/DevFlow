@@ -77,7 +77,7 @@ public class SettingsView extends ScrollPane {
         Label patLabel = new Label("Personal Access Token");
         patLabel.getStyleClass().addAll("settings-label", "t-card-title");
 
-        Label patDesc = new Label("Token für private Repository-Updates. Wird lokal gespeichert.");
+        Label patDesc = new Label("Optional: nur für private Repository-Updates oder höhere GitHub-Limits. Wird lokal gespeichert.");
         patDesc.getStyleClass().addAll("settings-description", "t-body");
         patDesc.setWrapText(true);
 
@@ -178,7 +178,7 @@ public class SettingsView extends ScrollPane {
             patStatus.setText("Aktueller Token: " + hint);
             patField.setPromptText("Neuen Token eingeben, um zu ersetzen");
         } else {
-            patStatus.setText("Kein Token gespeichert.");
+            patStatus.setText("Kein Token gespeichert. Public-Repos werden trotzdem geprüft.");
             patField.setPromptText("ghp_…");
         }
     }
