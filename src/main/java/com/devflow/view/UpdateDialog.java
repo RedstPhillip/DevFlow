@@ -52,8 +52,7 @@ public class UpdateDialog extends Stage {
         HBox header = new HBox(8, title, headerSpacer, closeBtn);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        Label versionLabel = new Label("Aktuell: " + AppConfig.APP_VERSION + " / " + shortCommit(AppConfig.APP_COMMIT)
-                + "  ->  Neu: " + info.version);
+        Label versionLabel = new Label("Aktuell: " + AppConfig.APP_VERSION + "  ->  Neu: " + info.version);
         versionLabel.getStyleClass().addAll("muted", "t-body");
         versionLabel.setWrapText(true);
 
@@ -100,7 +99,6 @@ public class UpdateDialog extends Stage {
                         statusLabel.setText("Update wird angewendet …");
                         try {
                             updateService.applyUpdate(jarPath);
-                            updateService.markInstalled(info.commitSha);
                             Platform.exit();
                             System.exit(0);
                         } catch (IOException | RuntimeException ex) {
@@ -141,11 +139,6 @@ public class UpdateDialog extends Stage {
         setScene(scene);
         setTitle("DevFlow Update");
         setOnShown(e -> centerOverOwner(owner));
-    }
-
-    private String shortCommit(String sha) {
-        if (sha == null || sha.isBlank()) return "unbekannt";
-        return sha.length() > 12 ? sha.substring(0, 12) : sha;
     }
 
     private void centerOverOwner(Stage owner) {

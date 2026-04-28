@@ -4,6 +4,7 @@ import com.devflow.config.AppConfig;
 import com.devflow.config.TokenStore;
 import com.devflow.util.JsonUtil;
 import com.devflow.util.PlatformUtil;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -18,16 +20,13 @@ import java.util.concurrent.CompletableFuture;
 
 public class UpdateService {
 
-    private static final Path INSTALLED_COMMIT_FILE =
-            PlatformUtil.getAppDataDir().resolve("installed-commit.txt");
-
     private final HttpClient client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
     public CompletableFuture<UpdateInfo> checkForUpdate() {
         String url = "https://api.github.com/repos/" + AppConfig.GITHUB_OWNER + "/"
-                + AppConfig.GITHUB_REPO + "/commits/" + AppConfig.GITHUB_BRANCH;
+                + AppConfig.GITHUB_REPO + "/releases";
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -42,8 +41,8 @@ public class UpdateService {
                         System.err.println("GitHub API returned " + response.statusCode());
                         return null;
                     }
-                    JsonObject commit = JsonUtil.gson().fromJson(response.body(), JsonObject.class);
-                    return updateFromLatestCommit(commit);
+                    JsonArray releases = JsonUtil.gson().fromJson(response.body(), JsonArray.class);
+                    return newestAvailableUpdate(releases);
                 });
     }
 
@@ -78,63 +77,48 @@ public class UpdateService {
         }
     }
 
-    private UpdateInfo updateFromLatestCommit(JsonObject latest) {
-        if (latest == null || !latest.has("sha") || latest.get("sha").isJsonNull()) return null;
-        String latestSha = latest.get("sha").getAsString();
-        String currentSha = currentCommit();
-        if (!currentSha.isBlank() && latestSha.equalsIgnoreCase(currentSha)) return null;
-        if (!currentSha.isBlank() && latestSha.startsWith(currentSha)) return null;
-        if (!currentSha.isBlank() && currentSha.length() >= 7 && currentSha.length() <= latestSha.length()
-                && currentSha.equalsIgnoreCase(latestSha.substring(0, currentSha.length()))) {
-            return null;
-        }
+    private UpdateInfo newestAvailableUpdate(JsonArray releases) {
+        if (releases == null || releases.isEmpty()) return null;
 
-        String shortSha = latestSha.length() > 12 ? latestSha.substring(0, 12) : latestSha;
-        String commitUrl = latest.has("html_url") && !latest.get("html_url").isJsonNull()
-                ? latest.get("html_url").getAsString() : null;
-        String downloadUrl = AppConfig.UPDATE_JAR_URL == null || AppConfig.UPDATE_JAR_URL.isBlank()
-                ? null
-                : AppConfig.UPDATE_JAR_URL + "?sha=" + latestSha;
-        return new UpdateInfo("Commit " + shortSha, commitNotes(latest), downloadUrl, commitUrl, latestSha);
-    }
-
-    private String commitNotes(JsonObject latest) {
-        JsonObject commit = latest.has("commit") && latest.get("commit").isJsonObject()
-                ? latest.getAsJsonObject("commit") : null;
-        String message = "";
-        if (commit != null && commit.has("message") && !commit.get("message").isJsonNull()) {
-            message = commit.get("message").getAsString();
-        }
-        String htmlUrl = latest.has("html_url") && !latest.get("html_url").isJsonNull()
-                ? latest.get("html_url").getAsString() : "";
-        StringBuilder notes = new StringBuilder("Neuer Commit auf ")
-                .append(AppConfig.GITHUB_BRANCH)
-                .append(" gefunden.");
-        if (!message.isBlank()) notes.append("\n\n").append(message);
-        if (!htmlUrl.isBlank()) notes.append("\n\n").append(htmlUrl);
-        return notes.toString();
-    }
-
-    private String currentCommit() {
-        try {
-            if (Files.exists(INSTALLED_COMMIT_FILE)) {
-                String installed = Files.readString(INSTALLED_COMMIT_FILE).trim();
-                if (!installed.isBlank()) return installed;
+        JsonObject newest = null;
+        String newestVersion = null;
+        for (var releaseElement : releases) {
+            JsonObject release = releaseElement.getAsJsonObject();
+            if (release.has("draft") && release.get("draft").getAsBoolean()) continue;
+            String version = normalizeTag(release);
+            if (version.isBlank() || !isNewer(version, AppConfig.APP_VERSION)) continue;
+            if (newestVersion == null || isNewer(version, newestVersion)) {
+                newest = release;
+                newestVersion = version;
             }
-        } catch (IOException e) {
-            System.err.println("Failed to read installed commit marker: " + e.getMessage());
         }
-        return AppConfig.APP_COMMIT == null ? "" : AppConfig.APP_COMMIT.trim();
+
+        if (newest == null) return null;
+        String releaseNotes = newest.has("body") && !newest.get("body").isJsonNull()
+                ? newest.get("body").getAsString() : "";
+        return new UpdateInfo(newestVersion, releaseNotes, jarDownloadUrl(newest));
     }
 
-    public void markInstalled(String commitSha) {
-        if (commitSha == null || commitSha.isBlank()) return;
-        try {
-            Files.createDirectories(INSTALLED_COMMIT_FILE.getParent());
-            Files.writeString(INSTALLED_COMMIT_FILE, commitSha.trim());
-        } catch (IOException e) {
-            System.err.println("Failed to write installed commit marker: " + e.getMessage());
+    private String normalizeTag(JsonObject release) {
+        if (release == null || !release.has("tag_name") || release.get("tag_name").isJsonNull()) {
+            return "";
         }
+        String tagName = release.get("tag_name").getAsString();
+        return tagName.startsWith("v") ? tagName.substring(1) : tagName;
+    }
+
+    private String jarDownloadUrl(JsonObject release) {
+        JsonArray assets = release.getAsJsonArray("assets");
+        if (assets == null) return null;
+        for (var asset : assets) {
+            JsonObject obj = asset.getAsJsonObject();
+            String name = obj.has("name") && !obj.get("name").isJsonNull()
+                    ? obj.get("name").getAsString() : "";
+            if (name.endsWith(".jar") && obj.has("browser_download_url")) {
+                return obj.get("browser_download_url").getAsString();
+            }
+        }
+        return null;
     }
 
     public void applyUpdate(Path updateJar) throws IOException {
@@ -143,16 +127,18 @@ public class UpdateService {
         Path targetJar = currentJar.toAbsolutePath();
 
         if (PlatformUtil.isWindows()) {
-            Path script = PlatformUtil.getAppDataDir().resolve("update.cmd");
-            String cmd = "@echo off\r\n"
-                    + "timeout /t 3 /nobreak >nul\r\n"
-                    + "copy /Y \"" + updateJar.toAbsolutePath() + "\" \"" + targetJar + "\"\r\n"
-                    + "del \"" + updateJar.toAbsolutePath() + "\"\r\n"
-                    + "start javaw -jar \"" + targetJar + "\"\r\n"
-                    + "del \"%~f0\"\r\n";
-            Files.writeString(script, cmd);
-            new ProcessBuilder("cmd", "/c", "start", "/min", script.toString())
-                    .inheritIO().start();
+            Path script = PlatformUtil.getAppDataDir().resolve("update.ps1");
+            String ps = "$ErrorActionPreference = 'Stop'\r\n"
+                    + "Start-Sleep -Seconds 3\r\n"
+                    + "$source = '" + escapePowerShell(updateJar.toAbsolutePath().toString()) + "'\r\n"
+                    + "$target = '" + escapePowerShell(targetJar.toString()) + "'\r\n"
+                    + "Copy-Item -LiteralPath $source -Destination $target -Force\r\n"
+                    + "Remove-Item -LiteralPath $source -Force -ErrorAction SilentlyContinue\r\n"
+                    + "Start-Process -FilePath 'javaw' -ArgumentList @('-jar', $target)\r\n"
+                    + "Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue\r\n";
+            Files.writeString(script, ps, StandardCharsets.UTF_8);
+            new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                    "-WindowStyle", "Hidden", "-File", script.toString()).start();
         } else {
             Path script = PlatformUtil.getAppDataDir().resolve("update.sh");
             String sh = "#!/bin/bash\n"
@@ -167,27 +153,38 @@ public class UpdateService {
         }
     }
 
+    private String escapePowerShell(String value) {
+        return value.replace("'", "''");
+    }
+
+    private boolean isNewer(String remote, String current) {
+        String[] r = remote.split("\\.");
+        String[] c = current.split("\\.");
+        for (int i = 0; i < Math.max(r.length, c.length); i++) {
+            int rv = i < r.length ? parseVersionPart(r[i]) : 0;
+            int cv = i < c.length ? parseVersionPart(c[i]) : 0;
+            if (rv > cv) return true;
+            if (rv < cv) return false;
+        }
+        return false;
+    }
+
+    private int parseVersionPart(String part) {
+        if (part == null) return 0;
+        String digits = part.replaceFirst("[^0-9].*$", "");
+        if (digits.isBlank()) return 0;
+        return Integer.parseInt(digits);
+    }
+
     public static class UpdateInfo {
         public final String version;
         public final String releaseNotes;
         public final String downloadUrl;
-        public final String commitUrl;
-        public final String commitSha;
 
         public UpdateInfo(String version, String releaseNotes, String downloadUrl) {
-            this(version, releaseNotes, downloadUrl, null, null);
-        }
-
-        public UpdateInfo(String version, String releaseNotes, String downloadUrl, String commitUrl) {
-            this(version, releaseNotes, downloadUrl, commitUrl, null);
-        }
-
-        public UpdateInfo(String version, String releaseNotes, String downloadUrl, String commitUrl, String commitSha) {
             this.version = version;
             this.releaseNotes = releaseNotes;
             this.downloadUrl = downloadUrl;
-            this.commitUrl = commitUrl;
-            this.commitSha = commitSha;
         }
     }
 }
