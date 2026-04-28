@@ -24,6 +24,7 @@ public class AppConfig {
     public static final String GITHUB_OWNER = props.getProperty("github.owner", "redstphillip");
     public static final String GITHUB_REPO = props.getProperty("github.repo", "devflow");
     public static final String GITHUB_BRANCH = props.getProperty("github.branch", "main");
+    public static final String UPDATE_JAR_URL = props.getProperty("update.jar.url", "");
 
     public static final int POLL_INTERVAL_MS = 2000;
     public static final int CHAT_LIST_REFRESH_MS = 10000;

@@ -18,6 +18,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class UpdateService {
 
+    private static final Path INSTALLED_COMMIT_FILE =
+            PlatformUtil.getAppDataDir().resolve("installed-commit.txt");
+
     private final HttpClient client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
@@ -78,7 +81,7 @@ public class UpdateService {
     private UpdateInfo updateFromLatestCommit(JsonObject latest) {
         if (latest == null || !latest.has("sha") || latest.get("sha").isJsonNull()) return null;
         String latestSha = latest.get("sha").getAsString();
-        String currentSha = AppConfig.APP_COMMIT == null ? "" : AppConfig.APP_COMMIT.trim();
+        String currentSha = currentCommit();
         if (!currentSha.isBlank() && latestSha.equalsIgnoreCase(currentSha)) return null;
         if (!currentSha.isBlank() && latestSha.startsWith(currentSha)) return null;
         if (!currentSha.isBlank() && currentSha.length() >= 7 && currentSha.length() <= latestSha.length()
@@ -87,7 +90,12 @@ public class UpdateService {
         }
 
         String shortSha = latestSha.length() > 12 ? latestSha.substring(0, 12) : latestSha;
-        return new UpdateInfo("Commit " + shortSha, commitNotes(latest), null);
+        String commitUrl = latest.has("html_url") && !latest.get("html_url").isJsonNull()
+                ? latest.get("html_url").getAsString() : null;
+        String downloadUrl = AppConfig.UPDATE_JAR_URL == null || AppConfig.UPDATE_JAR_URL.isBlank()
+                ? null
+                : AppConfig.UPDATE_JAR_URL + "?sha=" + latestSha;
+        return new UpdateInfo("Commit " + shortSha, commitNotes(latest), downloadUrl, commitUrl, latestSha);
     }
 
     private String commitNotes(JsonObject latest) {
@@ -105,6 +113,28 @@ public class UpdateService {
         if (!message.isBlank()) notes.append("\n\n").append(message);
         if (!htmlUrl.isBlank()) notes.append("\n\n").append(htmlUrl);
         return notes.toString();
+    }
+
+    private String currentCommit() {
+        try {
+            if (Files.exists(INSTALLED_COMMIT_FILE)) {
+                String installed = Files.readString(INSTALLED_COMMIT_FILE).trim();
+                if (!installed.isBlank()) return installed;
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to read installed commit marker: " + e.getMessage());
+        }
+        return AppConfig.APP_COMMIT == null ? "" : AppConfig.APP_COMMIT.trim();
+    }
+
+    public void markInstalled(String commitSha) {
+        if (commitSha == null || commitSha.isBlank()) return;
+        try {
+            Files.createDirectories(INSTALLED_COMMIT_FILE.getParent());
+            Files.writeString(INSTALLED_COMMIT_FILE, commitSha.trim());
+        } catch (IOException e) {
+            System.err.println("Failed to write installed commit marker: " + e.getMessage());
+        }
     }
 
     public void applyUpdate(Path updateJar) throws IOException {
@@ -141,11 +171,23 @@ public class UpdateService {
         public final String version;
         public final String releaseNotes;
         public final String downloadUrl;
+        public final String commitUrl;
+        public final String commitSha;
 
         public UpdateInfo(String version, String releaseNotes, String downloadUrl) {
+            this(version, releaseNotes, downloadUrl, null, null);
+        }
+
+        public UpdateInfo(String version, String releaseNotes, String downloadUrl, String commitUrl) {
+            this(version, releaseNotes, downloadUrl, commitUrl, null);
+        }
+
+        public UpdateInfo(String version, String releaseNotes, String downloadUrl, String commitUrl, String commitSha) {
             this.version = version;
             this.releaseNotes = releaseNotes;
             this.downloadUrl = downloadUrl;
+            this.commitUrl = commitUrl;
+            this.commitSha = commitSha;
         }
     }
 }

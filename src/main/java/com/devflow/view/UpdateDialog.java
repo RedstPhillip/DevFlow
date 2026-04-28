@@ -35,11 +35,12 @@ public class UpdateDialog extends Stage {
         initOwner(owner);
         initStyle(StageStyle.TRANSPARENT);
 
-        VBox root = new VBox(16);
+        VBox root = new VBox(14);
         root.getStyleClass().add("update-dialog");
         // Phase 4 §8 + Polish-Pass §4: width 480, padding 28, spacing 16.
         root.setPadding(new Insets(28));
-        root.setMaxWidth(480);
+        root.setMinWidth(520);
+        root.setMaxWidth(520);
 
         Label title = new Label("Update verfügbar");
         title.getStyleClass().addAll("section-title", "t-card-title");
@@ -51,14 +52,15 @@ public class UpdateDialog extends Stage {
         HBox header = new HBox(8, title, headerSpacer, closeBtn);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        Label versionLabel = new Label("Aktuelle Version: " + AppConfig.APP_VERSION
-                + "  \u2192  Neue Version: " + info.version);
+        Label versionLabel = new Label("Aktuell: " + AppConfig.APP_VERSION + " / " + shortCommit(AppConfig.APP_COMMIT)
+                + "  ->  Neu: " + info.version);
         versionLabel.getStyleClass().addAll("muted", "t-body");
+        versionLabel.setWrapText(true);
 
         TextArea notes = new TextArea(info.releaseNotes != null ? info.releaseNotes : "");
         notes.setEditable(false);
         notes.setWrapText(true);
-        notes.setPrefHeight(120);
+        notes.setPrefHeight(112);
         notes.getStyleClass().add("update-notes");
 
         progressBar = new ProgressBar(0);
@@ -69,16 +71,17 @@ public class UpdateDialog extends Stage {
         statusLabel = new Label();
         statusLabel.getStyleClass().addAll("muted", "t-caption");
         statusLabel.setVisible(false);
+        statusLabel.setManaged(true);
 
-        updateButton = new Button("Jetzt updaten");
+        updateButton = new Button("Update installieren");
         updateButton.getStyleClass().addAll("button-primary", "button-large");
         if (info.downloadUrl == null) {
             updateButton.setDisable(true);
-            statusLabel.setText("Neuer Commit erkannt. Kein automatischer Download konfiguriert.");
+            statusLabel.setText("Keine Update-Datei konfiguriert.");
             statusLabel.setVisible(true);
         }
 
-        skipButton = new Button("Überspringen");
+        skipButton = new Button("Später");
         skipButton.getStyleClass().add("button-flat");
         skipButton.setOnAction(e -> close());
 
@@ -97,6 +100,7 @@ public class UpdateDialog extends Stage {
                         statusLabel.setText("Update wird angewendet …");
                         try {
                             updateService.applyUpdate(jarPath);
+                            updateService.markInstalled(info.commitSha);
                             Platform.exit();
                             System.exit(0);
                         } catch (IOException | RuntimeException ex) {
@@ -129,6 +133,7 @@ public class UpdateDialog extends Stage {
         Scene scene = new Scene(root);
         scene.setFill(Color.TRANSPARENT);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/styles/enterprise.css").toExternalForm());
         // ESC closes when the update isn't actively downloading.
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE && !updateButton.isDisabled()) close();
@@ -136,6 +141,11 @@ public class UpdateDialog extends Stage {
         setScene(scene);
         setTitle("DevFlow Update");
         setOnShown(e -> centerOverOwner(owner));
+    }
+
+    private String shortCommit(String sha) {
+        if (sha == null || sha.isBlank()) return "unbekannt";
+        return sha.length() > 12 ? sha.substring(0, 12) : sha;
     }
 
     private void centerOverOwner(Stage owner) {
