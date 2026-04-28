@@ -19,7 +19,7 @@ public class AppConfig {
     }
 
     public static final String APP_VERSION = props.getProperty("app.version", "1.0.0");
-    public static final String API_URL = props.getProperty("api.url", "http://localhost:8080/api");
+    public static final String API_URL = props.getProperty("api.url", "https://devflow.redstphillip.uk/api");
     public static final String GITHUB_OWNER = props.getProperty("github.owner", "FplayG");
     public static final String GITHUB_REPO = props.getProperty("github.repo", "DevFlow");
 

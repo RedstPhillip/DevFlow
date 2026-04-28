@@ -25,6 +25,7 @@ public class ConnectionState {
 
     /** Optimistic default — until we attempt a request we don't know either way. */
     private volatile boolean online = true;
+    private volatile long lastOnlineAtMs = System.currentTimeMillis();
     private final CopyOnWriteArraySet<Consumer<Boolean>> listeners = new CopyOnWriteArraySet<>();
 
     private ConnectionState() {}
@@ -33,8 +34,16 @@ public class ConnectionState {
 
     public boolean isOnline() { return online; }
 
-    public void markOnline()  { setState(true); }
+    public void markOnline()  {
+        lastOnlineAtMs = System.currentTimeMillis();
+        setState(true);
+    }
     public void markOffline() { setState(false); }
+
+    public void markOfflineIfNoOnlineSince(long startedAtMs) {
+        if (lastOnlineAtMs > startedAtMs) return;
+        setState(false);
+    }
 
     private void setState(boolean newValue) {
         // Same-state transitions are noise; skip the notify to avoid

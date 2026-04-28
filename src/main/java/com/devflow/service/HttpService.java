@@ -125,17 +125,18 @@ public class HttpService {
      * (UnknownHostException, ConnectException, timeout, …) means we lost it.
      */
     private CompletableFuture<HttpResponse<String>> safeSend(HttpRequest request) {
+        long requestStartedAtMs = System.currentTimeMillis();
         try {
             return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .whenComplete((response, error) -> {
                         if (error != null) {
-                            ConnectionState.getInstance().markOffline();
+                            ConnectionState.getInstance().markOfflineIfNoOnlineSince(requestStartedAtMs);
                         } else {
                             ConnectionState.getInstance().markOnline();
                         }
                     });
         } catch (Throwable t) {
-            ConnectionState.getInstance().markOffline();
+            ConnectionState.getInstance().markOfflineIfNoOnlineSince(requestStartedAtMs);
             return CompletableFuture.failedFuture(t);
         }
     }
