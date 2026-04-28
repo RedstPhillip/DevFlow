@@ -647,13 +647,17 @@
 
 .chat-input:focused {
     -fx-border-color: -df-blue;
+    -fx-border-width: 1;
+    -fx-padding: 8 10;
 }
 
 .chat-send-btn {
     -fx-background-color: -df-send-bg;
     -fx-text-fill: -df-send-text;
     -fx-min-width: 92;
-    -fx-pref-height: 28;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+    -fx-max-height: 42;
     -fx-padding: 5 12;
 }
 
@@ -1307,6 +1311,8 @@
 
 .chat-input:focused {
     -fx-border-color: -df-blue;
+    -fx-border-width: 1;
+    -fx-padding: 8 11;
 }
 
 .chat-composer-btn {
@@ -1320,7 +1326,9 @@
     -fx-background-color: -df-blue;
     -fx-text-fill: white;
     -fx-min-width: 96;
-    -fx-pref-height: 34;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+    -fx-max-height: 42;
 }
 
 .chat-send-btn:disabled {
@@ -1543,6 +1551,9 @@
     -fx-border-color: -df-input-border;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+    -fx-max-height: 42;
 }
 
 .chat-inspector {
@@ -1630,4 +1641,36 @@
     -fx-background-radius: 10;
     -fx-border-radius: 10;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.42), 34, 0.28, 0, 18);
+}
+
+/* Stable interaction geometry: focus/click states may change colour only.
+   This neutralizes earlier focus-ring rules that changed border stacks/insets
+   and made fields or surrounding rows appear to jump on click. */
+.text-field:focused,
+.password-field:focused,
+.login-field:focused {
+    -fx-border-color: -df-blue;
+    -fx-border-width: 1;
+    -fx-border-insets: 0;
+    -fx-border-radius: 5;
+    -fx-padding: 9 12;
+}
+
+.sidebar-search-field:focused {
+    -fx-border-color: -df-blue;
+    -fx-border-width: 1;
+    -fx-border-insets: 0;
+    -fx-border-radius: 7;
+    -fx-padding: 7 10;
+}
+
+.text-area:focused {
+    -fx-border-color: -df-blue;
+    -fx-border-width: 1;
+    -fx-border-insets: 0;
+    -fx-border-radius: 5;
+}
+
+.button:focused {
+    -fx-border-insets: 0;
 }

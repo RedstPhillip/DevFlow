@@ -76,10 +76,30 @@ public class MainController {
 
     public void start() {
         if (TokenStore.getInstance().hasAuthToken()) {
-            showMainLayout();
+            hydrateCurrentUserAndShowMainLayout();
         } else {
             showLogin();
         }
+    }
+
+    private void hydrateCurrentUserAndShowMainLayout() {
+        var token = TokenStore.getInstance().getAuthToken();
+        User cachedUser = token != null ? token.getUser() : null;
+        if (cachedUser != null && cachedUser.getUsername() != null && !cachedUser.getUsername().isBlank()) {
+            showMainLayout();
+            return;
+        }
+
+        userService.getMe()
+                .thenAccept(user -> {
+                    TokenStore.getInstance().updateUser(user);
+                    Platform.runLater(this::showMainLayout);
+                })
+                .exceptionally(ex -> {
+                    System.err.println("Failed to restore current user: " + ex.getMessage());
+                    Platform.runLater(this::showMainLayout);
+                    return null;
+                });
     }
 
     public void showLogin() {

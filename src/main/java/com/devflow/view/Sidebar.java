@@ -121,6 +121,10 @@ public class Sidebar extends VBox {
         BrandMark sidebarBrand = new BrandMark(22);
         workspaceName = new Label("—");
         workspaceName.getStyleClass().add("workspace-switcher-name");
+        workspaceName.setMinWidth(0);
+        workspaceName.setMaxWidth(Double.MAX_VALUE);
+        workspaceName.setTextOverrun(OverrunStyle.ELLIPSIS);
+        HBox.setHgrow(workspaceName, Priority.ALWAYS);
         FontIcon workspaceChev = new FontIcon(Feather.CHEVRON_DOWN);
         workspaceChev.getStyleClass().add("workspace-switcher-chevron");
         Region wsSpacer = new Region();
@@ -208,14 +212,22 @@ public class Sidebar extends VBox {
         userAvatar.getStyleClass().add("avatar-clickable");
         usernameLabel = new Label("–");
         usernameLabel.getStyleClass().addAll("sidebar-username", "t-body-strong");
+        usernameLabel.setMinWidth(0);
+        usernameLabel.setMaxWidth(Double.MAX_VALUE);
+        usernameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
         Circle presenceDot = new Circle(4);
         presenceDot.getStyleClass().add("sidebar-presence-online");
         statusLabel = new Label("Online");
         statusLabel.getStyleClass().addAll("sidebar-status", "t-caption");
+        statusLabel.setMinWidth(0);
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        statusLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
         HBox statusRow = new HBox(6, presenceDot, statusLabel);
         statusRow.setAlignment(Pos.CENTER_LEFT);
         VBox userInfo = new VBox(2, usernameLabel, statusRow);
         userInfo.setAlignment(Pos.CENTER_LEFT);
+        userInfo.setMinWidth(0);
+        userInfo.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(userInfo, Priority.ALWAYS);
 
         profileSummary = new HBox(10, userAvatar, userInfo);

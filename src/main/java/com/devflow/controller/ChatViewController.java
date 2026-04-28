@@ -20,6 +20,12 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.util.Duration;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 public class ChatViewController {
 
     private final ChatView view;
@@ -28,6 +34,9 @@ public class ChatViewController {
     private final User currentUser;
     private Timeline pollingTimeline;
     private long lastMessageId = 0;
+    private long nextOptimisticMessageId = -1;
+    private final Set<Long> renderedMessageIds = new HashSet<>();
+    private final Map<String, Integer> pendingOptimisticMessages = new HashMap<>();
     private Runnable onOpenGroupChatSettings;
     /** True between construction and dispose(); guards async callbacks against a detached view. */
     private volatile boolean active = true;
@@ -116,6 +125,13 @@ public class ChatViewController {
         view.getInputField().clear();
         view.getSendButton().setDisable(true);
 
+        Message optimistic = new Message(nextOptimisticMessageId--, chat.getId(), currentUser.getId(),
+                content, LocalDateTime.now());
+        String pendingKey = pendingKey(optimistic);
+        pendingOptimisticMessages.merge(pendingKey, 1, Integer::sum);
+        MessageBubble optimisticBubble = appendMessage(optimistic);
+        view.scrollToBottom();
+
         messageService.sendMessage(chat.getId(), content)
                 .thenAcceptAsync(message -> {
                     if (!active) return;
@@ -124,7 +140,8 @@ public class ChatViewController {
                     if (message.getTransmitterId() == 0) {
                         message.setTransmitterId(currentUser.getId());
                     }
-                    appendMessage(message);
+                    if (message.getId() > 0) renderedMessageIds.add(message.getId());
+                    decrementPending(pendingKey);
                     if (message.getId() > 0) lastMessageId = message.getId();
                     view.getSendButton().setDisable(view.getInputField().getText().trim().isEmpty());
                     view.getInputField().requestFocus();
@@ -134,6 +151,13 @@ public class ChatViewController {
                 .exceptionally(ex -> {
                     Platform.runLater(() -> {
                         if (!active) return;
+                        decrementPending(pendingKey);
+                        if (optimisticBubble != null) {
+                            view.getMessagesBox().getChildren().remove(optimisticBubble);
+                        }
+                        if (view.getMessagesBox().getChildren().isEmpty()) {
+                            view.getMessagesBox().getChildren().add(buildChatEmptyState());
+                        }
                         if (view.getInputField().getText().isBlank()) {
                             view.getInputField().setText(content);
                         }
@@ -149,6 +173,7 @@ public class ChatViewController {
                 .thenAcceptAsync(messages -> {
                     if (!active) return;
                     view.getMessagesBox().getChildren().clear();
+                    renderedMessageIds.clear();
                     if (messages.isEmpty()) {
                         // Phase 3 P2: show a differentiated empty-state instead of an
                         // empty pane. Wording depends on chat type and ownership so the
@@ -220,11 +245,24 @@ public class ChatViewController {
                 });
     }
 
-    private void appendMessage(Message message) {
-        appendMessage(message, chat.isGroupChat() && message.getTransmitterId() != currentUser.getId());
+    private MessageBubble appendMessage(Message message) {
+        return appendMessage(message, chat.isGroupChat() && message.getTransmitterId() != currentUser.getId());
     }
 
-    private void appendMessage(Message message, boolean showSender) {
+    private MessageBubble appendMessage(Message message, boolean showSender) {
+        if (message.getId() > 0 && renderedMessageIds.contains(message.getId())) {
+            return null;
+        }
+        if (message.getId() > 0
+                && message.getTransmitterId() == currentUser.getId()
+                && hasPending(pendingKey(message))) {
+            renderedMessageIds.add(message.getId());
+            decrementPending(pendingKey(message));
+            return null;
+        }
+        if (message.getId() > 0) {
+            renderedMessageIds.add(message.getId());
+        }
         // If the empty-state placeholder is up, drop it before adding the
         // first real bubble — otherwise the placeholder would push the bubble
         // off-frame on the first send.
@@ -236,6 +274,27 @@ public class ChatViewController {
         User sender = findUser(message.getTransmitterId());
         MessageBubble bubble = new MessageBubble(message, isOwn, sender, showSender);
         children.add(bubble);
+        return bubble;
+    }
+
+    private String pendingKey(Message message) {
+        String content = message.getContent() == null ? "" : message.getContent();
+        long keyChatId = message.getChatId() > 0 ? message.getChatId() : chat.getId();
+        return keyChatId + ":" + message.getTransmitterId() + ":" + content;
+    }
+
+    private boolean hasPending(String key) {
+        return pendingOptimisticMessages.getOrDefault(key, 0) > 0;
+    }
+
+    private void decrementPending(String key) {
+        Integer count = pendingOptimisticMessages.get(key);
+        if (count == null) return;
+        if (count <= 1) {
+            pendingOptimisticMessages.remove(key);
+        } else {
+            pendingOptimisticMessages.put(key, count - 1);
+        }
     }
 
     private User findUser(long id) {

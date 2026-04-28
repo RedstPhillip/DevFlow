@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseButton;
@@ -33,20 +34,28 @@ public class MessageBubble extends HBox {
 
         Label name = new Label(senderName);
         name.getStyleClass().add("message-sender");
+        name.setMinWidth(0);
+        name.setMaxWidth(260);
+        name.setTextOverrun(OverrunStyle.ELLIPSIS);
 
         Label time = new Label(DateFormatter.formatTime(message.getCreatedAt()));
         time.getStyleClass().add("bubble-time");
+        time.setMinWidth(Region.USE_PREF_SIZE);
 
         HBox meta = new HBox(8, name, time);
         meta.setAlignment(Pos.BASELINE_LEFT);
+        meta.setMinWidth(0);
+        HBox.setHgrow(name, Priority.ALWAYS);
 
         Text text = new Text(message.getContent() == null ? "" : message.getContent());
         text.getStyleClass().add("message-text");
 
         TextFlow flow = new TextFlow(text);
         flow.getStyleClass().add("message-text-flow");
+        flow.setMinWidth(0);
         flow.setMaxWidth(MAX_MESSAGE_WIDTH);
         flow.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        text.wrappingWidthProperty().bind(flow.maxWidthProperty().subtract(1));
         widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double available = Math.max(160, newWidth.doubleValue() - 96);
             flow.setMaxWidth(Math.min(MAX_MESSAGE_WIDTH, available));

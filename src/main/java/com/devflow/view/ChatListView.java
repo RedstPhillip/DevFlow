@@ -164,9 +164,13 @@ public class ChatListView extends StackPane {
     private HBox buildSectionHeader(String title, FontIcon chevron, Label count, Runnable onToggle, boolean sub) {
         Label name = new Label(title);
         name.getStyleClass().add(sub ? "chat-list-subsection-title" : "chat-list-section-title");
+        name.setMinWidth(0);
+        name.setMaxWidth(Double.MAX_VALUE);
+        name.setTextOverrun(OverrunStyle.ELLIPSIS);
         chevron.getStyleClass().add("chat-list-section-chevron");
         count.getStyleClass().add("chat-list-section-count");
         Region spacer = new Region();
+        HBox.setHgrow(name, Priority.ALWAYS);
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox header = new HBox(6, chevron, name, spacer, count);
         header.getStyleClass().add(sub ? "chat-list-subsection-header" : "chat-list-section-header");
@@ -349,9 +353,13 @@ public class ChatListView extends StackPane {
         s.count = new Label();
         s.label = new Label();
         s.label.getStyleClass().add("chat-list-subsection-title");
+        s.label.setMinWidth(0);
+        s.label.setMaxWidth(Double.MAX_VALUE);
+        s.label.setTextOverrun(OverrunStyle.ELLIPSIS);
         s.chevron.getStyleClass().add("chat-list-section-chevron");
         s.count.getStyleClass().add("chat-list-section-count");
         Region spacer = new Region();
+        HBox.setHgrow(s.label, Priority.ALWAYS);
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox header = new HBox(6, s.chevron, s.label, spacer, s.count);
         header.getStyleClass().add("chat-list-subsection-header");

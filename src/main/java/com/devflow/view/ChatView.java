@@ -111,6 +111,11 @@ public class ChatView extends VBox {
         inspectorType.getStyleClass().add("chat-inspector-property-value");
         inspectorMembers = new Label();
         inspectorMembers.getStyleClass().add("chat-inspector-property-value");
+        for (Label value : new Label[] { inspectorWorkspace, inspectorType, inspectorMembers }) {
+            value.setMinWidth(0);
+            value.setMaxWidth(170);
+            value.setTextOverrun(OverrunStyle.ELLIPSIS);
+        }
 
         VBox properties = new VBox(12,
                 propertiesTitle,
@@ -178,20 +183,19 @@ public class ChatView extends VBox {
         inputField.getStyleClass().add("chat-input");
         inputField.setWrapText(true);
         inputField.setPrefRowCount(1);
-        inputField.setMinHeight(38);
-        inputField.setPrefHeight(38);
-        inputField.setMaxHeight(92);
-        inputField.textProperty().addListener((obs, oldText, newText) -> {
-            int lines = Math.min(4, Math.max(1, (newText == null ? "" : newText).split("\\R", -1).length));
-            inputField.setPrefRowCount(lines);
-            inputField.setPrefHeight(30 + lines * 18);
-        });
+        inputField.setMinHeight(42);
+        inputField.setPrefHeight(42);
+        inputField.setMaxHeight(42);
+        inputField.setMinWidth(0);
         HBox.setHgrow(inputField, Priority.ALWAYS);
 
         FontIcon sendIcon = new FontIcon(Feather.SEND);
         sendIcon.getStyleClass().add("chat-send-icon");
         sendButton = new Button("Senden", sendIcon);
         sendButton.getStyleClass().add("chat-send-btn");
+        sendButton.setMinHeight(42);
+        sendButton.setPrefHeight(42);
+        sendButton.setMaxHeight(42);
 
         HBox composerToolbar = new HBox(6,
                 buildComposerAction(Feather.CODE, "Code", "`"),
@@ -203,7 +207,7 @@ public class ChatView extends VBox {
 
         HBox inputRow = new HBox(10, inputField, sendButton);
         inputRow.getStyleClass().add("chat-composer-input-row");
-        inputRow.setAlignment(Pos.BOTTOM_CENTER);
+        inputRow.setAlignment(Pos.CENTER);
 
         VBox inputBar = new VBox(8, composerToolbar, inputRow);
         inputBar.getStyleClass().add("chat-input-bar");

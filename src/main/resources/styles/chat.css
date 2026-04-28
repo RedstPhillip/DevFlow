@@ -114,8 +114,8 @@
 }
 .chat-input:focused {
     -fx-border-color: -df-ring;
-    -fx-border-width: 1.5;
-    -fx-padding: 8.5 15.5;
+    -fx-border-width: 1;
+    -fx-padding: 9 16;
 }
 
 .chat-send-btn {
@@ -125,6 +125,9 @@
     -fx-border-radius: 999;
     -fx-border-color: transparent;
     -fx-padding: 8 18;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+    -fx-max-height: 42;
     -fx-font-size: 13px;
     -fx-font-weight: 700;
     -fx-cursor: hand;
