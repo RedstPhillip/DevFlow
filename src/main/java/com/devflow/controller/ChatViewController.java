@@ -28,6 +28,8 @@ import java.util.Set;
 
 public class ChatViewController {
 
+    private static final long MAX_POLL_BACKOFF_MS = 30_000;
+
     private final ChatView view;
     private final MessageService messageService;
     private Chat chat;
@@ -37,6 +39,9 @@ public class ChatViewController {
     private long nextOptimisticMessageId = -1;
     private final Set<Long> renderedMessageIds = new HashSet<>();
     private final Map<String, Integer> pendingOptimisticMessages = new HashMap<>();
+    private int consecutivePollingFailures = 0;
+    private long nextPollAttemptAtMs = 0;
+    private String lastPollingErrorSignature = "";
     private Runnable onOpenGroupChatSettings;
     /** True between construction and dispose(); guards async callbacks against a detached view. */
     private volatile boolean active = true;
@@ -228,10 +233,15 @@ public class ChatViewController {
     }
 
     private void pollNewMessages() {
+        long now = System.currentTimeMillis();
+        if (now < nextPollAttemptAtMs) {
+            return;
+        }
         Long afterId = lastMessageId > 0 ? lastMessageId : null;
         messageService.getMessages(chat.getId(), afterId)
                 .thenAcceptAsync(messages -> {
                     if (!active) return;
+                    resetPollingBackoff();
                     if (!messages.isEmpty()) {
                         for (Message msg : messages) {
                             appendMessage(msg);
@@ -240,9 +250,46 @@ public class ChatViewController {
                     }
                 }, Platform::runLater)
                 .exceptionally(ex -> {
-                    System.err.println("Polling error: " + ex.getMessage());
+                    handlePollingError(ex);
                     return null;
                 });
+    }
+
+    private void handlePollingError(Throwable ex) {
+        if (!active) return;
+        Throwable root = rootCause(ex);
+        String signature = root.getClass().getSimpleName() + ": " + safeMessage(root);
+        consecutivePollingFailures++;
+        long delay = Math.min(MAX_POLL_BACKOFF_MS,
+                AppConfig.POLL_INTERVAL_MS * (1L << Math.min(4, consecutivePollingFailures - 1)));
+        nextPollAttemptAtMs = System.currentTimeMillis() + delay;
+
+        if (consecutivePollingFailures == 1 || !signature.equals(lastPollingErrorSignature)) {
+            System.err.println("Polling paused: " + signature + " (retry in " + (delay / 1000) + "s)");
+            lastPollingErrorSignature = signature;
+        }
+    }
+
+    private void resetPollingBackoff() {
+        if (consecutivePollingFailures > 0) {
+            System.err.println("Polling recovered.");
+        }
+        consecutivePollingFailures = 0;
+        nextPollAttemptAtMs = 0;
+        lastPollingErrorSignature = "";
+    }
+
+    private Throwable rootCause(Throwable ex) {
+        Throwable root = ex;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        return root;
+    }
+
+    private String safeMessage(Throwable ex) {
+        String message = ex.getMessage();
+        return message == null || message.isBlank() ? "no details" : message;
     }
 
     private MessageBubble appendMessage(Message message) {
