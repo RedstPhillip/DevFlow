@@ -130,12 +130,19 @@ public class UpdateService {
         String[] r = remote.split("\\.");
         String[] c = current.split("\\.");
         for (int i = 0; i < Math.max(r.length, c.length); i++) {
-            int rv = i < r.length ? Integer.parseInt(r[i]) : 0;
-            int cv = i < c.length ? Integer.parseInt(c[i]) : 0;
+            int rv = i < r.length ? parseVersionPart(r[i]) : 0;
+            int cv = i < c.length ? parseVersionPart(c[i]) : 0;
             if (rv > cv) return true;
             if (rv < cv) return false;
         }
         return false;
+    }
+
+    private int parseVersionPart(String part) {
+        if (part == null) return 0;
+        String digits = part.replaceFirst("[^0-9].*$", "");
+        if (digits.isBlank()) return 0;
+        return Integer.parseInt(digits);
     }
 
     public static class UpdateInfo {
