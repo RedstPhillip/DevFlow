@@ -220,7 +220,7 @@ public class MainController {
         chatListController.startRefresh();
 
         showWelcomeContent();
-        updateTitleSubtitle(hasWorkspace ? "Workspace" : "Direktnachrichten");
+        updateTitleSubtitle("Direktnachrichten");
 
         setScene(mainLayout, "/styles/chat.css");
     }

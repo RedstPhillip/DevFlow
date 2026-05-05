@@ -431,7 +431,8 @@ public class Sidebar extends VBox {
                         return;
                     }
                     showWorkspaceError(false);
-                    workspacesCache = (list != null ? list : new ArrayList<>()).stream()
+                    List<Workspace> loadedWorkspaces = list != null ? list : new ArrayList<>();
+                    workspacesCache = loadedWorkspaces.stream()
                             .filter(ws -> ws != null && !ws.isPersonal())
                             .toList();
                     Workspace current = WorkspaceState.getInstance().getCurrent();
@@ -554,10 +555,6 @@ public class Sidebar extends VBox {
             workspaceName.setText("Kein Workspace");
             return;
         }
-        if (ws == null) {
-            workspaceName.setText("—");
-            return;
-        }
         workspaceName.setText(ws.getName());
     }
 
@@ -566,11 +563,4 @@ public class Sidebar extends VBox {
         workspaceErrorBanner.setManaged(visible);
     }
 
-    private static Workspace placeholderWorkspace() {
-        Workspace ws = new Workspace();
-        ws.setId(-1);
-        ws.setName("—");
-        ws.setPersonal(false);
-        return ws;
-    }
 }

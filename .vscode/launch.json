@@ -3,13 +3,6 @@
   "configurations": [
     {
       "type": "java",
-      "name": "MainApp",
-      "request": "launch",
-      "mainClass": "com.devflow.MainApp",
-      "projectName": "devflow-ui"
-    },
-    {
-      "type": "java",
       "name": "DevFlow",
       "request": "launch",
       "mainClass": "com.devflow.Launcher",
