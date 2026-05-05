@@ -27,6 +27,8 @@ public class ChatView extends VBox {
     private final TextArea inputField;
     private final Button sendButton;
     private final Button infoButton;
+    private final Button settingsButton;
+    private final VBox inspector;
     private final Button aboutTab;
     private final Button membersTab;
     private final Button integrationsTab;
@@ -39,6 +41,7 @@ public class ChatView extends VBox {
     private final VBox aboutPane;
     private final VBox membersPane;
     private final VBox integrationsPane;
+    private boolean inspectorOpen = false;
 
     public ChatView() {
         getStyleClass().add("chat-view");
@@ -63,14 +66,17 @@ public class ChatView extends VBox {
         headerStatus.setMaxWidth(Double.MAX_VALUE);
         headerStatus.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-        infoButton = buildHeaderToolButton(Feather.SLIDERS, "Unterhaltung verwalten");
-        infoButton.setVisible(false);
-        infoButton.setManaged(false);
+        infoButton = buildHeaderToolButton(Feather.INFO, "Details ein-/ausblenden");
+        infoButton.setOnAction(e -> setInspectorOpen(!inspectorOpen));
+
+        settingsButton = buildHeaderToolButton(Feather.SLIDERS, "Unterhaltung verwalten");
+        settingsButton.setVisible(false);
+        settingsButton.setManaged(false);
 
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
-        HBox header = new HBox(12, avatarHost, headerText, headerSpacer, infoButton);
+        HBox header = new HBox(12, avatarHost, headerText, headerSpacer, infoButton, settingsButton);
         header.getStyleClass().add("chat-header");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(10, 18, 10, 18));
@@ -160,7 +166,7 @@ public class ChatView extends VBox {
             HBox.setHgrow(tab, Priority.ALWAYS);
         }
 
-        VBox inspector = new VBox(16, inspectorTabs, inspectorPaneHost);
+        inspector = new VBox(16, inspectorTabs, inspectorPaneHost);
         inspector.getStyleClass().add("chat-inspector");
         inspector.setPadding(new Insets(20, 18, 18, 18));
         inspector.setMinWidth(336);
@@ -193,23 +199,18 @@ public class ChatView extends VBox {
         sendIcon.getStyleClass().add("chat-send-icon");
         sendButton = new Button("Senden", sendIcon);
         sendButton.getStyleClass().add("chat-send-btn");
+        sendButton.setDisable(true);
         sendButton.setMinHeight(42);
         sendButton.setPrefHeight(42);
         sendButton.setMaxHeight(42);
-
-        HBox composerToolbar = new HBox(6,
-                buildComposerAction(Feather.CODE, "Code", "`"),
-                buildComposerAction(Feather.AT_SIGN, "Mention", "@"),
-                buildComposerAction(Feather.LINK, "Link", "https://"),
-                buildComposerAction(Feather.HASH, "Referenz", "#")
-        );
-        composerToolbar.getStyleClass().add("chat-composer-toolbar");
+        inputField.textProperty().addListener((obs, old, text) ->
+                sendButton.setDisable(text == null || text.trim().isEmpty()));
 
         HBox inputRow = new HBox(10, inputField, sendButton);
         inputRow.getStyleClass().add("chat-composer-input-row");
         inputRow.setAlignment(Pos.CENTER);
 
-        VBox inputBar = new VBox(8, composerToolbar, inputRow);
+        VBox inputBar = new VBox(inputRow);
         inputBar.getStyleClass().add("chat-input-bar");
         inputBar.setPadding(new Insets(10, 12, 12, 12));
         inputBar.setMinWidth(0);
@@ -230,12 +231,16 @@ public class ChatView extends VBox {
         conversationBody.getStyleClass().add("chat-body");
         VBox.setVgrow(conversationBody, Priority.ALWAYS);
         conversationBody.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            boolean showInspector = newWidth.doubleValue() >= 900;
-            inspector.setVisible(showInspector);
-            inspector.setManaged(showInspector);
+            if (newWidth.doubleValue() < 760) setInspectorOpen(false);
         });
 
         getChildren().addAll(header, conversationBody);
+    }
+
+    public void setInspectorOpen(boolean open) {
+        this.inspectorOpen = open;
+        inspector.setVisible(open);
+        inspector.setManaged(open);
     }
 
     private Button buildHeaderToolButton(Feather icon, String tooltip) {
@@ -344,4 +349,5 @@ public class ChatView extends VBox {
     public TextArea getInputField() { return inputField; }
     public Button getSendButton() { return sendButton; }
     public Button getInfoButton() { return infoButton; }
+    public Button getSettingsButton() { return settingsButton; }
 }

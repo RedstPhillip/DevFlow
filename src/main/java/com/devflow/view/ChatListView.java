@@ -71,7 +71,11 @@ public class ChatListView extends StackPane {
     private final FontIcon dmChevron = new FontIcon(Feather.CHEVRON_DOWN);
 
     // ── Group-chats umbrella ──────────────────────────────────────────────
-    /** Raw un-partitioned list of all group chats from the last setChats(). */
+    /** Group chats are workspace-scoped and shown as one flat list. */
+    private final ObservableList<Chat> groupChats = FXCollections.observableArrayList();
+    private final FilteredList<Chat> groupFiltered = new FilteredList<>(groupChats, c -> true);
+    private final ListView<Chat> groupList = new ListView<>(groupFiltered);
+    /** Raw un-partitioned list retained for older helper methods kept below. */
     private final List<Chat> allGroupChats = new ArrayList<>();
     /** Snapshot of current workspace's groups (from GroupState). */
     private List<Group> currentGroups = Collections.emptyList();
@@ -79,6 +83,7 @@ public class ChatListView extends StackPane {
     private final VBox groupSectionsHost = new VBox();
     /** Umbrella "Gruppenchats" outer section (header + groupSectionsHost). */
     private final VBox groupChatsSection;
+    private final Node workspaceDivider;
     private final Label groupChatsCount = new Label();
     private final FontIcon groupChatsChevron = new FontIcon(Feather.CHEVRON_DOWN);
     /** Per-bucket cached sub-section state, keyed by group-id or ALLGEMEIN_KEY. */
@@ -95,6 +100,7 @@ public class ChatListView extends StackPane {
      * DMs are workspace-agnostic and unaffected.
      */
     private long currentWorkspaceId = 0;
+    private long desiredSelectedChatId = -1;
     private boolean suppressSelectionEvents = false;
     private boolean loaded = false;
 
@@ -102,23 +108,32 @@ public class ChatListView extends StackPane {
         getStyleClass().add("chat-list-panel");
 
         // DM section
-        Node dmHeader = buildSectionHeader("Direktnachrichten", dmChevron, dmCount,
+        Node dmHeader = buildSectionHeader("DMs · alle Workspaces", dmChevron, dmCount,
                 () -> toggleListVisibility(dmList, dmChevron), false);
         dmList.getStyleClass().addAll("list-view-clean", "chat-list-inner");
-        dmList.setCellFactory(lv -> new ChatListCell());
+        dmList.setCellFactory(lv -> new ChatListCell(false));
         dmList.setFocusTraversable(false);
         bindListSelection(dmList);
         dmList.prefHeightProperty().bind(Bindings.size(dmFiltered).multiply(56));
         dmList.managedProperty().bind(dmList.visibleProperty());
         VBox dmSection = new VBox(dmHeader, dmList);
+        dmSection.getStyleClass().add("chat-list-dm-section");
 
-        // Group-chats umbrella
+        // Group chats: flat per-workspace list. Folder labels like "Allgemein"
+        // were removed because they added noise without changing behaviour.
+        workspaceDivider = buildWorkspaceDivider();
         Node groupChatsHeader = buildSectionHeader("Gruppenchats", groupChatsChevron, groupChatsCount,
-                () -> toggleNodeVisibility(groupSectionsHost, groupChatsChevron), false);
-        groupSectionsHost.managedProperty().bind(groupSectionsHost.visibleProperty());
-        groupChatsSection = new VBox(groupChatsHeader, groupSectionsHost);
+                () -> toggleListVisibility(groupList, groupChatsChevron), false);
+        groupList.getStyleClass().addAll("list-view-clean", "chat-list-inner");
+        groupList.setCellFactory(lv -> new ChatListCell(false));
+        groupList.setFocusTraversable(false);
+        bindListSelection(groupList);
+        groupList.prefHeightProperty().bind(Bindings.size(groupFiltered).multiply(56));
+        groupList.managedProperty().bind(groupList.visibleProperty());
+        groupChatsSection = new VBox(groupChatsHeader, groupList);
+        updateWorkspaceSectionVisibility();
 
-        VBox content = new VBox(dmSection, groupChatsSection);
+        VBox content = new VBox(dmSection, workspaceDivider, groupChatsSection);
         content.getStyleClass().add("chat-list-content");
 
         ScrollPane scroll = new ScrollPane(content);
@@ -144,26 +159,37 @@ public class ChatListView extends StackPane {
         emptyState.setPadding(new Insets(12, 18, 8, 18));
         emptyState.visibleProperty().bind(
                 Bindings.size(dmFiltered).isEqualTo(0)
-                        .and(Bindings.createBooleanBinding(this::isAllGroupSubSectionsEmpty,
-                                // Re-evaluate whenever any bucket list changes. Instead of
-                                // binding explicit deps (which would require rebuilding on
-                                // group change), we piggy-back on groupChatsCount which we
-                                // refresh after every partition/rebuild.
-                                groupChatsCount.textProperty())));
+                        .and(Bindings.size(groupFiltered).isEqualTo(0)));
         emptyState.managedProperty().bind(emptyState.visibleProperty());
 
         getChildren().addAll(scroll, emptyState);
-
-        // Seed an initial (empty) render so the "Gruppenchats" section is
-        // well-formed before the first setChats()/setGroups() lands.
-        rebuildGroupSections();
     }
 
     // ── Section header factory ─────────────────────────────────────────────
 
+    private HBox buildWorkspaceDivider() {
+        Region line = new Region();
+        line.getStyleClass().add("chat-list-workspace-divider-line");
+        Label label = new Label("Workspace");
+        label.getStyleClass().add("chat-list-workspace-divider-label");
+        Region line2 = new Region();
+        line2.getStyleClass().add("chat-list-workspace-divider-line");
+        HBox.setHgrow(line, Priority.ALWAYS);
+        HBox.setHgrow(line2, Priority.ALWAYS);
+        HBox divider = new HBox(8, line, label, line2);
+        divider.getStyleClass().add("chat-list-workspace-divider");
+        divider.setAlignment(Pos.CENTER);
+        return divider;
+    }
+
     private HBox buildSectionHeader(String title, FontIcon chevron, Label count, Runnable onToggle, boolean sub) {
         Label name = new Label(title);
         name.getStyleClass().add(sub ? "chat-list-subsection-title" : "chat-list-section-title");
+        boolean dmHeader = title != null && title.startsWith("DMs");
+        if (dmHeader) {
+            name.setText("Direktnachrichten");
+            name.getStyleClass().add("chat-list-dm-title");
+        }
         name.setMinWidth(0);
         name.setMaxWidth(Double.MAX_VALUE);
         name.setTextOverrun(OverrunStyle.ELLIPSIS);
@@ -174,6 +200,12 @@ public class ChatListView extends StackPane {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox header = new HBox(6, chevron, name, spacer, count);
         header.getStyleClass().add(sub ? "chat-list-subsection-header" : "chat-list-section-header");
+        if (dmHeader) {
+            Label badge = new Label("GLOBAL");
+            badge.getStyleClass().add("chat-list-global-badge");
+            header.getStyleClass().add("chat-list-dm-header");
+            header.getChildren().add(2, badge);
+        }
         header.setAlignment(Pos.CENTER_LEFT);
         // Sub-sections get extra left padding so the chevron aligns under the
         // umbrella's title text — reads as a tree in a single glance.
@@ -203,12 +235,14 @@ public class ChatListView extends StackPane {
             suppressSelectionEvents = true;
             try {
                 if (dmList != list) dmList.getSelectionModel().clearSelection();
+                if (groupList != list) groupList.getSelectionModel().clearSelection();
                 for (SubSection s : subSections.values()) {
                     if (s.list != list) s.list.getSelectionModel().clearSelection();
                 }
             } finally {
                 suppressSelectionEvents = false;
             }
+            desiredSelectedChatId = selected.getId();
             if (onChatSelected != null) onChatSelected.accept(selected);
         });
     }
@@ -218,19 +252,20 @@ public class ChatListView extends StackPane {
     public void setChats(List<Chat> chatList) {
         // Remember current selection (across all lists) so we can restore it.
         Chat previouslySelected = currentSelection();
+        long restoreId = previouslySelected != null ? previouslySelected.getId() : desiredSelectedChatId;
 
         List<Chat> dms = new ArrayList<>();
-        allGroupChats.clear();
+        List<Chat> groups = new ArrayList<>();
         for (Chat c : chatList) {
-            if (c.isGroupChat()) allGroupChats.add(c);
+            if (c.isGroupChat()) groups.add(c);
             else dms.add(c);
         }
 
         suppressSelectionEvents = true;
         try {
             dmChats.setAll(dms);
-            repartitionGroupChats();
-            restoreSelection(previouslySelected);
+            groupChats.setAll(groups);
+            restoreSelectionById(restoreId);
         } finally {
             suppressSelectionEvents = false;
         }
@@ -250,15 +285,6 @@ public class ChatListView extends StackPane {
      */
     public void setGroups(List<Group> groups) {
         this.currentGroups = groups != null ? groups : Collections.emptyList();
-        Chat previouslySelected = currentSelection();
-        suppressSelectionEvents = true;
-        try {
-            rebuildGroupSections();
-            repartitionGroupChats();
-            restoreSelection(previouslySelected);
-        } finally {
-            suppressSelectionEvents = false;
-        }
         refreshCounts();
     }
 
@@ -266,12 +292,14 @@ public class ChatListView extends StackPane {
         suppressSelectionEvents = true;
         try {
             dmList.getSelectionModel().clearSelection();
+            groupList.getSelectionModel().clearSelection();
             for (SubSection s : subSections.values()) {
                 s.list.getSelectionModel().clearSelection();
             }
         } finally {
             suppressSelectionEvents = false;
         }
+        desiredSelectedChatId = -1;
     }
 
     public void setFilter(String text) {
@@ -286,6 +314,7 @@ public class ChatListView extends StackPane {
 
     public void setCurrentWorkspaceId(long workspaceId) {
         this.currentWorkspaceId = workspaceId;
+        updateWorkspaceSectionVisibility();
         applyPredicates();
     }
 
@@ -295,6 +324,11 @@ public class ChatListView extends StackPane {
 
     public void setCurrentUserId(long userId) {
         this.currentUserId = userId;
+    }
+
+    public void selectChat(Chat chat) {
+        desiredSelectedChatId = chat == null ? -1 : chat.getId();
+        restoreSelectionById(desiredSelectedChatId);
     }
 
     // ── Internals ──────────────────────────────────────────────────────────
@@ -343,7 +377,7 @@ public class ChatListView extends StackPane {
         s.filtered = new FilteredList<>(s.chats, c -> matchesText(c) && matchesWorkspace(c));
         s.list = new ListView<>(s.filtered);
         s.list.getStyleClass().addAll("list-view-clean", "chat-list-inner");
-        s.list.setCellFactory(lv -> new ChatListCell());
+        s.list.setCellFactory(lv -> new ChatListCell(true));
         s.list.setFocusTraversable(false);
         s.list.prefHeightProperty().bind(Bindings.size(s.filtered).multiply(56));
         s.list.managedProperty().bind(s.list.visibleProperty());
@@ -399,15 +433,28 @@ public class ChatListView extends StackPane {
 
     private void applyPredicates() {
         dmFiltered.setPredicate(this::matchesText);
+        groupFiltered.setPredicate(c -> matchesText(c) && matchesWorkspace(c));
         for (SubSection s : subSections.values()) {
             s.filtered.setPredicate(c -> matchesText(c) && matchesWorkspace(c));
         }
         refreshCounts();
     }
 
+    private void updateWorkspaceSectionVisibility() {
+        boolean hasWorkspace = currentWorkspaceId > 0;
+        if (groupChatsSection != null) {
+            groupChatsSection.setVisible(hasWorkspace);
+            groupChatsSection.setManaged(hasWorkspace);
+        }
+        if (workspaceDivider != null) {
+            workspaceDivider.setVisible(hasWorkspace);
+            workspaceDivider.setManaged(hasWorkspace);
+        }
+    }
+
     private void refreshCounts() {
         dmCount.setText(String.valueOf(dmFiltered.size()));
-        int total = 0;
+        int total = groupFiltered.size();
         for (SubSection s : subSections.values()) {
             int n = s.filtered.size();
             s.count.setText(String.valueOf(n));
@@ -425,12 +472,13 @@ public class ChatListView extends StackPane {
         if (currentWorkspaceId == 0) return true;
         if (currentWorkspaceId < 0) return false;
         Long wsId = c.getWorkspaceId();
-        if (wsId == null) return true;
-        return wsId == currentWorkspaceId;
+        return wsId != null && wsId == currentWorkspaceId;
     }
 
     private Chat currentSelection() {
         Chat sel = dmList.getSelectionModel().getSelectedItem();
+        if (sel != null) return sel;
+        sel = groupList.getSelectionModel().getSelectedItem();
         if (sel != null) return sel;
         for (SubSection s : subSections.values()) {
             Chat c = s.list.getSelectionModel().getSelectedItem();
@@ -441,22 +489,29 @@ public class ChatListView extends StackPane {
 
     private void restoreSelection(Chat previouslySelected) {
         if (previouslySelected == null) return;
-        long id = previouslySelected.getId();
-        if (previouslySelected.isGroupChat()) {
-            for (SubSection s : subSections.values()) {
-                for (Chat c : s.chats) {
-                    if (c.getId() == id) {
-                        s.list.getSelectionModel().select(c);
-                        return;
-                    }
-                }
+        restoreSelectionById(previouslySelected.getId());
+    }
+
+    private void restoreSelectionById(long id) {
+        if (id <= 0) return;
+        for (Chat c : groupChats) {
+            if (c.getId() == id && matchesWorkspace(c)) {
+                groupList.getSelectionModel().select(c);
+                return;
             }
-        } else {
-            for (Chat c : dmChats) {
+        }
+        for (SubSection s : subSections.values()) {
+            for (Chat c : s.chats) {
                 if (c.getId() == id) {
-                    dmList.getSelectionModel().select(c);
+                    s.list.getSelectionModel().select(c);
                     return;
                 }
+            }
+        }
+        for (Chat c : dmChats) {
+            if (c.getId() == id) {
+                dmList.getSelectionModel().select(c);
+                return;
             }
         }
     }
@@ -513,7 +568,7 @@ public class ChatListView extends StackPane {
         private final Label timeLabel = new Label();
         private final HBox row;
 
-        ChatListCell() {
+        ChatListCell(boolean indented) {
             nameLabel.getStyleClass().add("chat-cell-name");
             previewLabel.getStyleClass().add("chat-cell-preview");
             timeLabel.getStyleClass().add("chat-cell-time");
@@ -534,9 +589,9 @@ public class ChatListView extends StackPane {
             row.setAlignment(Pos.CENTER_LEFT);
             row.setMinWidth(0);
             row.setMaxWidth(Double.MAX_VALUE);
-            // Cells inside a sub-section get extra left padding so they read
-            // as the third level of a VS Code-style tree.
-            row.setPadding(new Insets(7, 12, 7, 32));
+            // Group chats sit one level deeper in the folder tree; DMs keep
+            // the tighter left edge so previews do not get squeezed.
+            row.setPadding(indented ? new Insets(7, 12, 7, 32) : new Insets(7, 12, 7, 12));
         }
 
         @Override

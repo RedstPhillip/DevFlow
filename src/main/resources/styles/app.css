@@ -322,6 +322,10 @@
     -fx-padding: 12;
 }
 .main-layout.maximized { -fx-padding: 0; }
+.main-layout.native-frameless {
+    -fx-background-color: -df-background;
+    -fx-padding: 0;
+}
 
 .window-frame {
     -fx-background-color: -df-background;
@@ -336,6 +340,12 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.14), 22, 0.14, 0, 6);
 }
 .window-frame.maximized {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+.window-frame.native-frameless {
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-border-width: 0;
@@ -364,6 +374,7 @@
     -fx-background-radius: 12 12 0 0;
 }
 .window-frame.maximized .titlebar { -fx-background-radius: 0; }
+.window-frame.native-frameless .titlebar { -fx-background-radius: 0; }
 
 /* Phase 4: font sizes come from atomic .t-body-strong / .t-caption applied
    in CustomTitleBar.java; rules here keep only colour responsibilities. */
@@ -374,28 +385,73 @@
    text-fill so the icons inherit hover/active states without per-state
    overrides. -fx-icon-size matches the old unicode glyph cap-height so
    we don't lose visual weight. */
-.titlebar-button > .titlebar-icon {
-    -fx-icon-size: 14;
-    -fx-icon-color: -df-muted-foreground;
+.titlebar-icon {
+    -fx-min-width: 14;
+    -fx-pref-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
 }
-.titlebar-button:hover > .titlebar-icon {
-    -fx-icon-color: -df-foreground;
+.titlebar-icon-line {
+    -fx-background-color: -df-muted-foreground;
+    -fx-min-width: 10.5;
+    -fx-pref-width: 10.5;
+    -fx-max-width: 10.5;
+    -fx-min-height: 1.4;
+    -fx-pref-height: 1.4;
+    -fx-max-height: 1.4;
 }
-.titlebar-button-close:hover > .titlebar-icon {
-    -fx-icon-color: white;
+.titlebar-icon-close-line {
+    -fx-min-width: 13.5;
+    -fx-pref-width: 13.5;
+    -fx-max-width: 13.5;
+}
+.titlebar-icon-square-shape {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-muted-foreground;
+    -fx-border-width: 1.35;
+    -fx-min-width: 10.5;
+    -fx-pref-width: 10.5;
+    -fx-max-width: 10.5;
+    -fx-min-height: 10.5;
+    -fx-pref-height: 10.5;
+    -fx-max-height: 10.5;
+}
+.titlebar-icon-restore-back {
+    -fx-translate-x: 2;
+    -fx-translate-y: -2;
+}
+.titlebar-icon-restore-front {
+    -fx-translate-x: -1;
+    -fx-translate-y: 1;
+    -fx-background-color: -df-titlebar;
+}
+.titlebar-button:hover .titlebar-icon-line {
+    -fx-background-color: -df-foreground;
+}
+.titlebar-button:hover .titlebar-icon-square-shape {
+    -fx-border-color: -df-foreground;
+}
+.titlebar-button-close:hover .titlebar-icon-line {
+    -fx-background-color: white;
 }
 .titlebar-button {
     -fx-background-color: transparent;
     -fx-text-fill: -df-muted-foreground;
     -fx-font-size: 12px;
-    -fx-padding: 0 14;
+    -fx-padding: 0;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-border-color: transparent;
     -fx-cursor: hand;
     -fx-min-height: 36;
+    -fx-pref-height: 36;
     -fx-max-height: 36;
-    -fx-min-width: 44;
+    -fx-min-width: 46;
+    -fx-pref-width: 46;
+    -fx-max-width: 46;
+    -fx-alignment: center;
 }
 .titlebar-button:hover {
     -fx-background-color: -df-accent;
@@ -625,6 +681,44 @@
    driven by -fx-icon-size in the FontIcon-specific rule lower in this file.
    Count badge keeps its pill background and padding here (not typography). */
 .chat-list-section-title { -fx-text-fill: -df-muted-foreground; }
+.chat-list-dm-section {
+    -fx-background-color: -bg-elevated-2;
+    -fx-background-radius: 8;
+    -fx-border-color: -df-border-soft;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 2 0 4 0;
+}
+.chat-list-dm-header {
+    -fx-background-color: rgba(255, 255, 255, 0.02);
+    -fx-background-radius: 8 8 0 0;
+}
+.chat-list-dm-title {
+    -fx-text-fill: -df-foreground;
+}
+.chat-list-global-badge {
+    -fx-text-fill: -df-primary;
+    -fx-background-color: -df-primary-soft;
+    -fx-background-radius: 999;
+    -fx-padding: 1 6;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+}
+.chat-list-workspace-divider {
+    -fx-padding: 12 12 6 12;
+}
+.chat-list-workspace-divider-line {
+    -fx-background-color: -df-border-soft;
+    -fx-min-height: 1;
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+}
+.chat-list-workspace-divider-label {
+    -fx-text-fill: -text-tertiary;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-text-transform: uppercase;
+}
 .chat-list-section-count {
     -fx-text-fill: -df-muted-foreground;
     -fx-background-color: -df-accent;
@@ -889,7 +983,7 @@
 .invite-code-field {
     -fx-font-family: "Consolas", "Menlo", monospace;
     -fx-font-size: 16px;
-    -fx-letter-spacing: 2px;
+    -fx-letter-spacing: 0;
 }
 
 /* Sentinel "(no folder)" entry in the GroupFolder picker — italic +
@@ -979,13 +1073,13 @@
 .t-page-title {
     -fx-font-size: 22px;
     -fx-font-weight: 600;
-    -fx-letter-spacing: -0.01em;
+    -fx-letter-spacing: 0;
     -fx-text-fill: -text-primary;
 }
 .t-section-header {
     -fx-font-size: 12px;
     -fx-font-weight: 600;
-    -fx-letter-spacing: 0.04em;
+    -fx-letter-spacing: 0;
     -fx-text-fill: -text-secondary;
     /* Uppercase comes from the source text content — JavaFX-CSS has no
        text-transform, so call sites must pass already-uppercased strings. */

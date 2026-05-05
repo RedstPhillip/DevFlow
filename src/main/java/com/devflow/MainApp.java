@@ -3,6 +3,7 @@ package com.devflow;
 import com.devflow.config.AppConfig;
 import com.devflow.config.ThemeManager;
 import com.devflow.controller.MainController;
+import com.devflow.platform.PlatformWindowStyle;
 import com.devflow.service.UpdateService;
 import com.devflow.view.UpdateDialog;
 
@@ -10,7 +11,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 public class MainApp extends Application {
 
@@ -19,10 +19,10 @@ public class MainApp extends Application {
         loadFonts();
         ThemeManager.getInstance().applyInitial();
 
-        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.initStyle(PlatformWindowStyle.appStageStyle());
         stage.setTitle("DevFlow " + AppConfig.APP_VERSION);
-        stage.setMinWidth(900);
-        stage.setMinHeight(600);
+        stage.setMinWidth(720);
+        stage.setMinHeight(560);
 
         MainController mainController = new MainController(stage);
         mainController.start();

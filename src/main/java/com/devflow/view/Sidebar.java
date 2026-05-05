@@ -17,6 +17,7 @@ import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -66,7 +67,10 @@ public class Sidebar extends VBox {
      */
     public enum RailKey { CHATS, SETTINGS }
 
-    private static final int SIDEBAR_WIDTH = 230;
+    private static final int SIDEBAR_WIDTH = 260;
+    private static final int SIDEBAR_MIN_WIDTH = 220;
+    private static final int SIDEBAR_MAX_WIDTH = 380;
+    private static final int RESIZE_EDGE_WIDTH = 8;
 
     // Primary nav
     private final Button chatsNavItem;
@@ -109,12 +113,14 @@ public class Sidebar extends VBox {
 
     // External listener tracked so we can detach it on disposal.
     private final Consumer<Workspace> workspaceStateListener;
+    private boolean resizing = false;
 
     public Sidebar() {
         getStyleClass().add("sidebar");
         setPrefWidth(SIDEBAR_WIDTH);
-        setMinWidth(SIDEBAR_WIDTH);
-        setMaxWidth(SIDEBAR_WIDTH);
+        setMinWidth(SIDEBAR_MIN_WIDTH);
+        setMaxWidth(SIDEBAR_MAX_WIDTH);
+        installResizeHandlers();
 
         // ── 1) Workspace switcher (Polish-Pass §3: BrandMark + name + chevron). ──
         // Spec: 46 h row, 0/14 padding, 9 gap, name in 14/500, chevron 11 px.
@@ -279,6 +285,32 @@ public class Sidebar extends VBox {
         refreshWorkspacesInternal();
     }
 
+    private void installResizeHandlers() {
+        setOnMouseMoved(e -> setCursor(isOnResizeEdge(e.getX()) ? Cursor.E_RESIZE : Cursor.DEFAULT));
+        setOnMouseExited(e -> {
+            if (!resizing) setCursor(Cursor.DEFAULT);
+        });
+        setOnMousePressed(e -> {
+            if (isOnResizeEdge(e.getX())) {
+                resizing = true;
+                setCursor(Cursor.E_RESIZE);
+                e.consume();
+            }
+        });
+        setOnMouseDragged(e -> {
+            if (!resizing) return;
+            double localX = sceneToLocal(e.getSceneX(), e.getSceneY()).getX();
+            double width = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, localX));
+            setPrefWidth(width);
+            e.consume();
+        });
+        setOnMouseReleased(e -> resizing = false);
+    }
+
+    private boolean isOnResizeEdge(double x) {
+        return x >= getWidth() - RESIZE_EDGE_WIDTH && x <= getWidth() + RESIZE_EDGE_WIDTH;
+    }
+
     // ── Builders ─────────────────────────────────────────────────────────
 
     /** Subtle 1 px line separator used at the section boundaries. */
@@ -396,26 +428,21 @@ public class Sidebar extends VBox {
                 .whenComplete((list, err) -> Platform.runLater(() -> {
                     if (err != null) {
                         showWorkspaceError(true);
-                        if (WorkspaceState.getInstance().getCurrent() == null) {
-                            WorkspaceState.getInstance().setCurrent(placeholderWorkspace());
-                        }
                         return;
                     }
                     showWorkspaceError(false);
-                    workspacesCache = list != null ? list : new ArrayList<>();
+                    workspacesCache = (list != null ? list : new ArrayList<>()).stream()
+                            .filter(ws -> ws != null && !ws.isPersonal())
+                            .toList();
                     Workspace current = WorkspaceState.getInstance().getCurrent();
-                        Long currentId = current != null ? current.getId() : null;
-                        boolean stillValid = currentId != null && workspacesCache.stream()
+                    Long currentId = current != null ? current.getId() : null;
+                    boolean stillValid = currentId != null && workspacesCache.stream()
                             .anyMatch(w -> w.getId() == currentId);
                     if (!stillValid) {
-                        Workspace personal = workspacesCache.stream()
-                                .filter(Workspace::isPersonal)
-                                .findFirst()
-                                .orElse(workspacesCache.isEmpty() ? placeholderWorkspace() : workspacesCache.get(0));
-                        WorkspaceState.getInstance().setCurrent(personal);
+                        WorkspaceState.getInstance().setCurrent(null);
                     } else {
                         Workspace refreshed = workspacesCache.stream()
-                            .filter(w -> currentId != null && w.getId() == currentId)
+                                .filter(w -> currentId != null && w.getId() == currentId)
                                 .findFirst()
                                 .orElse(current);
                         WorkspaceState.getInstance().setCurrent(refreshed);
@@ -441,6 +468,7 @@ public class Sidebar extends VBox {
 
         if (workspacesCache.isEmpty()) {
             MenuItem empty = new MenuItem("Keine Workspaces verfügbar");
+            empty.setText("Kein Workspace");
             empty.setDisable(true);
             menu.getItems().add(empty);
         } else {
@@ -522,6 +550,10 @@ public class Sidebar extends VBox {
     }
 
     private void applyCurrentWorkspaceToHeader(Workspace ws) {
+        if (ws == null) {
+            workspaceName.setText("Kein Workspace");
+            return;
+        }
         if (ws == null) {
             workspaceName.setText("—");
             return;

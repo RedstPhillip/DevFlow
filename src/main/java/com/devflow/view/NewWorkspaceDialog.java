@@ -98,7 +98,9 @@ public class NewWorkspaceDialog extends VBox {
         // that simply disables submit rather than trimming silently.
         nameField.textProperty().addListener((obs, old, val) -> {
             String trimmed = val == null ? "" : val.trim();
-            submitBtn.setDisable(trimmed.isEmpty() || trimmed.length() > 100);
+            boolean reserved = "persönlich".equalsIgnoreCase(trimmed) || "persoenlich".equalsIgnoreCase(trimmed);
+            statusLabel.setText(reserved ? "Dieser Name ist für deinen privaten Bereich reserviert." : "");
+            submitBtn.setDisable(trimmed.isEmpty() || trimmed.length() > 100 || reserved);
         });
 
         submitBtn.setOnAction(e -> {

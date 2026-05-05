@@ -1,5 +1,6 @@
 package com.devflow.view;
 
+import com.devflow.platform.PlatformWindowStyle;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -48,6 +49,10 @@ public class MainLayout extends StackPane {
 
         frame = new VBox(titleBar, body);
         frame.getStyleClass().add("window-frame");
+        if (PlatformWindowStyle.usesOpaqueFramelessWindow()) {
+            getStyleClass().add("native-frameless");
+            frame.getStyleClass().add("native-frameless");
+        }
         VBox.setVgrow(body, Priority.ALWAYS);
 
         modalLayer = new StackPane();

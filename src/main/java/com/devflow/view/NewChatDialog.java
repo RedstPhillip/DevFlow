@@ -34,7 +34,9 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.function.Consumer;
 
 public class NewChatDialog extends VBox {
@@ -113,6 +115,8 @@ public class NewChatDialog extends VBox {
         // ── Tabs ──
         dmTab = tabButton("Direktnachricht", () -> setMode(Mode.DM));
         groupChatTab = tabButton("Gruppenchat", () -> setMode(Mode.GROUP_CHAT));
+        groupChatTab.setDisable(!hasActiveWorkspace());
+        groupChatTab.setTooltip(new Tooltip("Gruppenchats sind erst in einem Workspace verfuegbar"));
         HBox tabBar = new HBox(dmTab, groupChatTab);
         tabBar.getStyleClass().add("modal-tab-bar");
 
@@ -213,7 +217,16 @@ public class NewChatDialog extends VBox {
         return b;
     }
 
+    private boolean hasActiveWorkspace() {
+        Workspace ws = WorkspaceState.getInstance().getCurrent();
+        return ws != null && ws.getId() > 0;
+    }
+
     private void setMode(Mode newMode) {
+        if (newMode == Mode.GROUP_CHAT && !hasActiveWorkspace()) {
+            statusLabel.setText("Kein Workspace ausgewaehlt.");
+            newMode = Mode.DM;
+        }
         this.mode = newMode;
         dmTab.getStyleClass().remove("modal-tab-active");
         groupChatTab.getStyleClass().remove("modal-tab-active");
@@ -234,8 +247,8 @@ public class NewChatDialog extends VBox {
             groupChatTab.getStyleClass().add("modal-tab-active");
             groupChatNameBox.setVisible(true);
             groupChatNameBox.setManaged(true);
-            groupFolderBox.setVisible(true);
-            groupFolderBox.setManaged(true);
+            groupFolderBox.setVisible(false);
+            groupFolderBox.setManaged(false);
             selectedChips.setVisible(true);
             selectedChips.setManaged(true);
             primaryButton.setText("Gruppenchat erstellen");
@@ -243,10 +256,6 @@ public class NewChatDialog extends VBox {
             // added after the dialog opened show up. Cheap: member lists are
             // capped at ~50 in the 2b MVP.
             loadWorkspaceMembers();
-            // Repopulate the folder dropdown from the freshest GroupState
-            // snapshot. No HTTP here — the Sidebar owns the group list and
-            // pushes updates through GroupState.
-            populateGroupFolderOptions();
         }
         userListView.refresh();
         updatePrimary();
@@ -268,12 +277,21 @@ public class NewChatDialog extends VBox {
         }
         statusLabel.setText("");
         workspaceService.getMembers(ws.getId())
+                .thenCombine(userService.listUsers(), (members, allUsers) -> {
+                    Map<Long, Boolean> onlineById = allUsers.stream()
+                            .collect(Collectors.toMap(User::getId, User::isOnline, (a, b) -> b));
+                    List<User> hydrated = new ArrayList<>();
+                    for (var m : members) {
+                        if (m.getUserId() == currentUserId) continue;
+                        User user = m.toUser();
+                        user.setOnline(onlineById.getOrDefault(user.getId(), false));
+                        hydrated.add(user);
+                    }
+                    return hydrated;
+                })
                 .thenAcceptAsync(members -> {
                     workspaceMembers.clear();
-                    for (var m : members) {
-                        if (m.getUserId() == currentUserId) continue; // exclude self
-                        workspaceMembers.add(m.toUser());
-                    }
+                    workspaceMembers.addAll(members);
                     applyWorkspaceSearchFilter(searchField.getText());
                 }, Platform::runLater)
                 .exceptionally(ex -> {
@@ -410,10 +428,7 @@ public class NewChatDialog extends VBox {
         // Translate the sentinel "Allgemein" row (id = 0) back to a null
         // groupId — the backend treats null as "no folder" / implicit
         // Allgemein. Any other row carries a real workspace_groups.id.
-        Group selectedFolder = groupFolderCombo.getValue();
-        Long groupId = (selectedFolder == null || selectedFolder.getId() == ALLGEMEIN_SENTINEL_ID)
-                ? null
-                : selectedFolder.getId();
+        Long groupId = null;
         chatService.createGroupChat(name, ids, Chat.POLICY_OWNER_ONLY, ws.getId(), groupId)
                 .thenAcceptAsync(chat -> {
                     overlay.close();

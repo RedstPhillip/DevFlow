@@ -180,7 +180,9 @@ public class WorkspaceSettingsDialog extends VBox {
 
         // Personal workspaces have no invite code — hide the row entirely
         // rather than showing an empty field, which would be confusing.
-        boolean hasCode = workspace.getInviteCode() != null && !workspace.getInviteCode().isEmpty();
+        boolean hasCode = !workspace.isPersonal()
+                && workspace.getInviteCode() != null
+                && !workspace.getInviteCode().isEmpty();
         VBox codeBox = new VBox(6, codeLabel, codeRow);
         codeBox.setVisible(hasCode);
         codeBox.setManaged(hasCode);
@@ -228,7 +230,7 @@ public class WorkspaceSettingsDialog extends VBox {
         groupsSection = new VBox(6, groupsLabel, addRow, groupList);
         // Groups only make sense in multi-user workspaces; hide for personal
         // and for non-owner members (who can't mutate them anyway).
-        boolean canManageGroups = workspace.isOwner() && !workspace.isPersonal();
+        boolean canManageGroups = false;
         groupsSection.setVisible(canManageGroups);
         groupsSection.setManaged(canManageGroups);
 

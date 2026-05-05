@@ -37,6 +37,11 @@
             <artifactId>gson</artifactId>
             <version>2.11.0</version>
         </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.14.0</version>
+        </dependency>
         <!-- Icon font integration. ikonli-javafx is the JavaFX bridge; the
              feather pack supplies the same line-style icons the existing
              SVG Icons class is modelled on, so the visual language stays
@@ -86,8 +91,9 @@
                         <goals><goal>shade</goal></goals>
                         <configuration>
                             <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.devflow.MainApp</mainClass>
+                                    <mainClass>com.devflow.Launcher</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

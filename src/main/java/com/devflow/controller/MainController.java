@@ -8,6 +8,7 @@ import com.devflow.config.TokenStore;
 import com.devflow.config.WorkspaceState;
 import com.devflow.model.Chat;
 import com.devflow.model.User;
+import com.devflow.platform.PlatformWindowStyle;
 import com.devflow.service.AuthService;
 import com.devflow.service.ChatService;
 import com.devflow.service.MessageService;
@@ -53,6 +54,7 @@ public class MainController {
 
     private ChatListView chatListView;
     private SettingsView settingsView;
+    private boolean settingsVisible = false;
 
     /** Held reference so we can remove it on the next login/logout cycle and avoid leak accumulation. */
     private javafx.beans.value.ChangeListener<Number> loginMaximizeListener;
@@ -128,6 +130,10 @@ public class MainController {
 
         StackPane outer = new StackPane(frame);
         outer.getStyleClass().add("main-layout");
+        if (PlatformWindowStyle.usesOpaqueFramelessWindow()) {
+            outer.getStyleClass().add("native-frameless");
+            frame.getStyleClass().add("native-frameless");
+        }
         attachLoginMaximizeListener(outer, frame);
 
         setScene(outer, "/styles/login.css");
@@ -214,7 +220,7 @@ public class MainController {
         chatListController.startRefresh();
 
         showWelcomeContent();
-        updateTitleSubtitle("Workspace");
+        updateTitleSubtitle(hasWorkspace ? "Workspace" : "Direktnachrichten");
 
         setScene(mainLayout, "/styles/chat.css");
     }
@@ -229,6 +235,7 @@ public class MainController {
             settingsView = new SettingsView();
             settingsView.setOnLogout(this::logout);
         }
+        settingsVisible = true;
         mainLayout.getSidebar().setActive(Sidebar.RailKey.SETTINGS);
         updateTitleSubtitle("Einstellungen");
         mainLayout.setMainContent(settingsView);
@@ -240,17 +247,39 @@ public class MainController {
             chatViewController.dispose();
             chatViewController = null;
         }
+        settingsVisible = false;
+        if (chatListView != null) chatListView.selectChat(chat);
         // Make sure the rail/panel are in Chats mode (e.g. when opening a chat from Settings)
         mainLayout.getSidebar().setActive(Sidebar.RailKey.CHATS);
         ChatView chatView = new ChatView();
         User currentUser = getCurrentUser();
-        chatViewController = new ChatViewController(chatView, messageService, chat, currentUser);
+        chatViewController = new ChatViewController(chatView, messageService, userService, chat, currentUser);
         if (chat.isGroupChat()) {
             chatViewController.setOnOpenGroupChatSettings(() -> openGroupChatSettings(chat));
         }
         updateTitleSubtitle(chat.getDisplayName(currentUser.getId()));
         mainLayout.setMainContent(chatView);
         chatViewController.startPolling();
+    }
+
+    public void handleWorkspaceChanged(com.devflow.model.Workspace workspace) {
+        settingsView = null;
+        if (chatViewController != null) {
+            Chat open = chatViewController.getChat();
+            long workspaceId = workspace != null ? workspace.getId() : 0L;
+            boolean staleGroupChat = open != null
+                    && open.isGroupChat()
+                    && (workspaceId <= 0 || open.getWorkspaceId() == null || open.getWorkspaceId() != workspaceId);
+            if (staleGroupChat) {
+                showWelcomeContent();
+                return;
+            }
+        }
+        if (chatViewController == null && !settingsVisible) {
+            showWelcomeContent();
+            return;
+        }
+        updateTitleSubtitle(chatViewController != null ? chatViewController.getChatTitle() : "Workspace");
     }
 
     private void openGroupChatSettings(Chat chat) {
@@ -310,9 +339,8 @@ public class MainController {
                     mainLayout.getSidebar().refreshWorkspaces();
                 },
                 () -> {
-                    // After leaving, clear current so refreshWorkspaces picks
-                    // the personal workspace (or the first remaining one) as
-                    // the fallback.
+                    // After leaving, clear current. If no real workspace is
+                    // available the app stays in DM-only mode.
                     WorkspaceState.getInstance().setCurrent(null);
                     mainLayout.getSidebar().refreshWorkspaces();
                 });
@@ -365,12 +393,15 @@ public class MainController {
             chatViewController.dispose();
             chatViewController = null;
         }
+        settingsVisible = false;
         if (chatListView != null) chatListView.clearSelection();
 
         com.devflow.model.Workspace ws = WorkspaceState.getInstance().getCurrent();
         String workspace = ws != null && ws.getName() != null && !ws.getName().isBlank()
                 ? ws.getName()
                 : "Persönlich";
+        boolean hasWorkspace = ws != null && ws.getId() > 0;
+        if (!hasWorkspace) workspace = "Kein Workspace";
         FontIcon headerMark = new FontIcon(Feather.MESSAGE_SQUARE);
         headerMark.getStyleClass().add("workspace-home-header-mark");
         StackPane headerMarkHost = new StackPane(headerMark);
@@ -379,7 +410,7 @@ public class MainController {
         Label headerTitle = new Label(workspace);
         headerTitle.getStyleClass().add("workspace-home-header-title");
         headerTitle.setWrapText(true);
-        Label headerMeta = new Label("Workspace");
+        Label headerMeta = new Label(hasWorkspace ? "Workspace" : "Direktnachrichten");
         headerMeta.getStyleClass().add("workspace-home-header-meta");
         VBox headerCopy = new VBox(2, headerTitle, headerMeta);
         headerCopy.setAlignment(Pos.CENTER_LEFT);
@@ -395,16 +426,19 @@ public class MainController {
         FontIcon emptyIcon = new FontIcon(Feather.MESSAGE_SQUARE);
         emptyIcon.getStyleClass().add("workspace-home-empty-icon");
 
-        Label kicker = new Label("WORKSPACE");
+        Label kicker = new Label(hasWorkspace ? "WORKSPACE" : "DIREKTNACHRICHTEN");
         kicker.getStyleClass().add("workspace-home-kicker");
         Label title = new Label(workspace);
         title.getStyleClass().add("workspace-home-title");
         title.setWrapText(true);
         Label subtitle = new Label("Wähle links eine Unterhaltung oder starte einen neuen Chat.");
+        if (!hasWorkspace) {
+            subtitle.setText("Du bist in keinem Workspace. Du kannst Direktnachrichten schreiben oder einen Workspace erstellen bzw. beitreten.");
+        }
         subtitle.getStyleClass().add("workspace-home-subtitle");
         subtitle.setWrapText(true);
 
-        Button primary = new Button("Neue Unterhaltung");
+        Button primary = new Button(hasWorkspace ? "Neue Unterhaltung" : "Neue Direktnachricht");
         primary.getStyleClass().addAll("button-primary", "button-large", "workspace-home-primary");
         primary.setGraphic(new FontIcon(Feather.EDIT_3));
         primary.setOnAction(e -> openNewChatDialog());
@@ -414,7 +448,14 @@ public class MainController {
         secondary.setGraphic(new FontIcon(Feather.LOG_IN));
         secondary.setOnAction(e -> openJoinWorkspaceDialog());
 
-        HBox actions = new HBox(10, primary, secondary);
+        Button createWorkspace = new Button("Workspace erstellen");
+        createWorkspace.getStyleClass().addAll("button-secondary", "button-large");
+        createWorkspace.setGraphic(new FontIcon(Feather.PLUS));
+        createWorkspace.setOnAction(e -> openNewWorkspaceDialog());
+
+        HBox actions = hasWorkspace
+                ? new HBox(10, primary, secondary)
+                : new HBox(10, primary, createWorkspace, secondary);
         actions.getStyleClass().add("workspace-home-actions");
         actions.setAlignment(Pos.CENTER);
 
@@ -428,7 +469,7 @@ public class MainController {
 
         VBox wrapper = new VBox(header, canvas);
         wrapper.getStyleClass().addAll("content-area", "workspace-home");
-        updateTitleSubtitle("Workspace");
+        updateTitleSubtitle(hasWorkspace ? "Workspace" : "Direktnachrichten");
         mainLayout.setMainContent(wrapper);
     }
 
@@ -438,6 +479,7 @@ public class MainController {
         String workspace = ws != null && ws.getName() != null && !ws.getName().isBlank()
                 ? ws.getName()
                 : "Persönlich";
+        if (ws == null || ws.getId() <= 0) workspace = "Kein Workspace";
         mainLayout.getTitleBar().setSubtitle(workspace + " / " + context);
     }
 
@@ -476,7 +518,7 @@ public class MainController {
             ThemeManager.getInstance().unregisterScene(scene);
         }
         scene = new Scene(root, 1100, 740);
-        scene.setFill(Color.TRANSPARENT);
+        scene.setFill(PlatformWindowStyle.usesOpaqueFramelessWindow() ? Color.web("#07080c") : Color.TRANSPARENT);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
         if (extraStylesheet != null) {
             scene.getStylesheets().add(getClass().getResource(extraStylesheet).toExternalForm());

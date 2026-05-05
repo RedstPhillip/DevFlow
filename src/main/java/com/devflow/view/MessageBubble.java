@@ -9,6 +9,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseButton;
@@ -16,8 +17,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 
 public class MessageBubble extends HBox {
 
@@ -45,17 +44,16 @@ public class MessageBubble extends HBox {
         HBox meta = new HBox(8, name, time);
         meta.setAlignment(Pos.BASELINE_LEFT);
         meta.setMinWidth(0);
-        HBox.setHgrow(name, Priority.ALWAYS);
 
-        Text text = new Text(message.getContent() == null ? "" : message.getContent());
-        text.getStyleClass().add("message-text");
-
-        TextFlow flow = new TextFlow(text);
-        flow.getStyleClass().add("message-text-flow");
+        String messageText = message.getContent() == null ? "" : message.getContent();
+        TextArea flow = new TextArea(messageText);
+        flow.getStyleClass().addAll("message-text", "message-selectable");
+        flow.setEditable(false);
+        flow.setWrapText(true);
         flow.setMinWidth(0);
         flow.setMaxWidth(MAX_MESSAGE_WIDTH);
         flow.setPrefWidth(Region.USE_COMPUTED_SIZE);
-        text.wrappingWidthProperty().bind(flow.maxWidthProperty().subtract(1));
+        flow.setPrefRowCount(Math.min(8, Math.max(1, estimatedRows(messageText))));
         widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double available = Math.max(160, newWidth.doubleValue() - 96);
             flow.setMaxWidth(Math.min(MAX_MESSAGE_WIDTH, available));
@@ -88,5 +86,14 @@ public class MessageBubble extends HBox {
 
     public MessageBubble(Message message, boolean isOwn) {
         this(message, isOwn, null, false);
+    }
+
+    private static int estimatedRows(String text) {
+        if (text == null || text.isBlank()) return 1;
+        int rows = 0;
+        for (String line : text.split("\\R", -1)) {
+            rows += Math.max(1, (int) Math.ceil(line.length() / 80.0));
+        }
+        return rows;
     }
 }

@@ -7,6 +7,7 @@ import com.devflow.model.Message;
 import com.devflow.model.User;
 import com.devflow.model.Workspace;
 import com.devflow.service.MessageService;
+import com.devflow.service.UserService;
 import com.devflow.view.Avatar;
 import com.devflow.view.ChatView;
 import com.devflow.view.EmptyState;
@@ -32,6 +33,7 @@ public class ChatViewController {
 
     private final ChatView view;
     private final MessageService messageService;
+    private final UserService userService;
     private Chat chat;
     private final User currentUser;
     private Timeline pollingTimeline;
@@ -46,22 +48,24 @@ public class ChatViewController {
     /** True between construction and dispose(); guards async callbacks against a detached view. */
     private volatile boolean active = true;
 
-    public ChatViewController(ChatView view, MessageService messageService, Chat chat, User currentUser) {
+    public ChatViewController(ChatView view, MessageService messageService, UserService userService, Chat chat, User currentUser) {
         this.view = view;
         this.messageService = messageService;
+        this.userService = userService;
         this.chat = chat;
         this.currentUser = currentUser;
 
         setupHeader();
+        refreshPresence();
         bindEvents();
         loadMessages();
     }
 
     public void setOnOpenGroupChatSettings(Runnable r) {
         this.onOpenGroupChatSettings = r;
-        view.getInfoButton().setVisible(chat.isGroupChat());
-        view.getInfoButton().setManaged(chat.isGroupChat());
-        view.getInfoButton().setOnAction(e -> { if (onOpenGroupChatSettings != null) onOpenGroupChatSettings.run(); });
+        view.getSettingsButton().setVisible(chat.isGroupChat());
+        view.getSettingsButton().setManaged(chat.isGroupChat());
+        view.getSettingsButton().setOnAction(e -> { if (onOpenGroupChatSettings != null) onOpenGroupChatSettings.run(); });
     }
 
     public void refreshFrom(Chat updated) {
@@ -75,6 +79,7 @@ public class ChatViewController {
         String workspaceName = workspace != null && workspace.getName() != null && !workspace.getName().isBlank()
                 ? workspace.getName()
                 : "Persönlich";
+        if (workspace == null || workspace.getId() <= 0) workspaceName = "Kein Workspace";
         view.getHeaderName().setText(displayName);
 
         if (chat.isGroupChat()) {
@@ -351,6 +356,28 @@ public class ChatViewController {
     }
 
     public Chat getChat() { return chat; }
+
+    public String getChatTitle() {
+        return chat == null ? "Workspace" : chat.getDisplayName(currentUser.getId());
+    }
+
+    private void refreshPresence() {
+        if (userService == null || chat.getParticipants() == null || chat.getParticipants().isEmpty()) return;
+        userService.listUsers()
+                .thenAcceptAsync(users -> {
+                    if (!active || users == null) return;
+                    for (User participant : chat.getParticipants()) {
+                        for (User fresh : users) {
+                            if (fresh.getId() == participant.getId()) {
+                                participant.setOnline(fresh.isOnline());
+                                break;
+                            }
+                        }
+                    }
+                    setupHeader();
+                }, Platform::runLater)
+                .exceptionally(ex -> null);
+    }
 
     public void startPolling() {
         stopPolling();

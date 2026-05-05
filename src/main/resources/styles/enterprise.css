@@ -154,12 +154,14 @@
 .titlebar-button {
     -fx-background-color: transparent;
     -fx-background-radius: 0;
-    -fx-min-width: 40;
-    -fx-pref-width: 40;
-    -fx-max-width: 40;
+    -fx-min-width: 46;
+    -fx-pref-width: 46;
+    -fx-max-width: 46;
     -fx-min-height: 30;
     -fx-pref-height: 30;
     -fx-max-height: 30;
+    -fx-padding: 0;
+    -fx-alignment: center;
 }
 
 .titlebar-button:hover {
@@ -171,12 +173,61 @@
 }
 
 .titlebar-icon {
-    -fx-icon-color: -df-muted;
+    -fx-min-width: 14;
+    -fx-pref-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
 }
 
-.titlebar-button:hover .titlebar-icon,
-.titlebar-button-close:hover .titlebar-icon {
-    -fx-icon-color: white;
+.titlebar-icon-line {
+    -fx-background-color: -df-muted;
+    -fx-min-width: 10.5;
+    -fx-pref-width: 10.5;
+    -fx-max-width: 10.5;
+    -fx-min-height: 1.4;
+    -fx-pref-height: 1.4;
+    -fx-max-height: 1.4;
+}
+
+.titlebar-icon-close-line {
+    -fx-min-width: 13.5;
+    -fx-pref-width: 13.5;
+    -fx-max-width: 13.5;
+}
+
+.titlebar-icon-square-shape {
+    -fx-background-color: transparent;
+    -fx-border-color: -df-muted;
+    -fx-border-width: 1.35;
+    -fx-min-width: 10.5;
+    -fx-pref-width: 10.5;
+    -fx-max-width: 10.5;
+    -fx-min-height: 10.5;
+    -fx-pref-height: 10.5;
+    -fx-max-height: 10.5;
+}
+
+.titlebar-icon-restore-back {
+    -fx-translate-x: 2;
+    -fx-translate-y: -2;
+}
+
+.titlebar-icon-restore-front {
+    -fx-translate-x: -1;
+    -fx-translate-y: 1;
+    -fx-background-color: -df-titlebar;
+}
+
+.titlebar-button:hover .titlebar-icon-line,
+.titlebar-button-close:hover .titlebar-icon-line {
+    -fx-background-color: white;
+}
+
+.titlebar-button:hover .titlebar-icon-square-shape,
+.titlebar-button-close:hover .titlebar-icon-square-shape {
+    -fx-border-color: white;
 }
 
 .sidebar {
@@ -344,6 +395,50 @@
 .chat-list-subsection-title {
     -fx-text-fill: -df-muted;
     -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.chat-list-dm-section {
+    -fx-background-color: -df-panel-2;
+    -fx-background-radius: 8;
+    -fx-border-color: -df-line-soft;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 2 0 4 0;
+}
+
+.chat-list-dm-header {
+    -fx-background-color: rgba(255, 255, 255, 0.025);
+    -fx-background-radius: 8 8 0 0;
+}
+
+.chat-list-dm-title {
+    -fx-text-fill: -df-text;
+}
+
+.chat-list-global-badge {
+    -fx-text-fill: #9bbcff;
+    -fx-background-color: -df-blue-soft;
+    -fx-background-radius: 999;
+    -fx-padding: 1 6;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+}
+
+.chat-list-workspace-divider {
+    -fx-padding: 12 12 6 12;
+}
+
+.chat-list-workspace-divider-line {
+    -fx-background-color: -df-line-soft;
+    -fx-min-height: 1;
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+}
+
+.chat-list-workspace-divider-label {
+    -fx-text-fill: -df-faint;
+    -fx-font-size: 10px;
     -fx-font-weight: 700;
 }
 
@@ -1290,6 +1385,29 @@
     -fx-font-size: 13px;
     -fx-fill: -df-text;
     -fx-font-smoothing-type: gray;
+}
+
+.message-selectable,
+.message-selectable .content {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.message-selectable {
+    -fx-text-fill: -df-text;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.message-selectable .scroll-bar {
+    -fx-opacity: 0;
+    -fx-max-width: 0;
+    -fx-max-height: 0;
+    -fx-padding: 0;
 }
 
 .chat-input-bar {

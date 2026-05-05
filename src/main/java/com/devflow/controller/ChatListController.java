@@ -43,7 +43,7 @@ public class ChatListController {
         // and the right folder tree. Subsequent changes flow through the two
         // listeners registered below.
         Workspace initial = WorkspaceState.getInstance().getCurrent();
-        long initialWsId = initial != null ? initial.getId() : 0L;
+        long initialWsId = initial != null ? initial.getId() : -1L;
         view.setCurrentWorkspaceId(initialWsId);
         view.setGroups(GroupState.getInstance().getGroups());
 
@@ -52,8 +52,9 @@ public class ChatListController {
             // to FX before touching the view. Re-fetching chats here means a
             // freshly joined workspace's group chats appear immediately
             // without waiting for the 10 s poll tick.
-            long wsId = ws != null ? ws.getId() : 0L;
+            long wsId = ws != null ? ws.getId() : -1L;
             view.setCurrentWorkspaceId(wsId);
+            mainController.handleWorkspaceChanged(ws);
             // Reload the group tree for this workspace. GroupState handles the
             // placeholder (-1) and the 0 bootstrap state by clearing the cache.
             GroupState.getInstance().loadFor(wsId);
@@ -70,7 +71,7 @@ public class ChatListController {
         // Kick off initial group-load for the seeded workspace. For new logins
         // with a valid workspace this populates the tree before the first chat
         // response lands.
-        if (initialWsId != 0L) GroupState.getInstance().loadFor(initialWsId);
+        GroupState.getInstance().loadFor(initialWsId);
 
         loadChats();
     }

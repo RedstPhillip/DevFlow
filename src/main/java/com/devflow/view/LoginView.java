@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -24,6 +25,7 @@ public class LoginView extends StackPane {
         VBox card = new VBox(18);
         card.getStyleClass().add("login-card");
         card.setMaxWidth(400);
+        card.setMaxHeight(Region.USE_PREF_SIZE);
         card.setAlignment(Pos.TOP_LEFT);
 
         Label title = new Label("Willkommen bei DevFlow");
